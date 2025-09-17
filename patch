@@ -1,0 +1,1474 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000000000000000000000000000000000000..615cf40aac0857efbc2a6fd2ba3ee4ddecbb5982
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,10 @@
++*.iml
++.gradle/
++/local.properties
++/.idea/
++.DS_Store
++/build/
++/captures/
++.externalNativeBuild/
++.cxx/
++app/build/
+diff --git a/README.md b/README.md
+index 79dbb04bfa4446c77ae53ec9782bc97ddd67df70..d132ab87e0c0aee85b16d63870958ab3dd6151c4 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,48 @@
+-# device_owner
+\ No newline at end of file
++# Device Owner Control
++
++This project provides a sample device owner (device policy controller) application for custom Android builds. It demonstrates how to control access to the Google Play Store while still permitting automatic updates and offers a secure PIN-gated interface for administrators.
++
++## Features
++
++- Provisionable as a **device owner** for full control of device policies.
++- Blocks manual launches of the Google Play Store by redirecting market intents to an informational screen.
++- Allows background Play Store updates to continue to run so managed apps stay up to date.
++- Provides a simple admin UI secured by a PIN:
++  - First launch requests the administrator to configure a PIN.
++  - Subsequent launches require the PIN before policy changes can be made.
++  - Administrators can toggle the Play Store restriction on or off and update the PIN.
++- Stores the PIN using salted SHA-256 hashing.
++
++## Project structure
++
++- `app/src/main/java/com/example/deviceowner/admin` – Device admin receiver implementation.
++- `app/src/main/java/com/example/deviceowner/policy` – Helper that applies or removes Play Store restrictions via the `DevicePolicyManager` API.
++- `app/src/main/java/com/example/deviceowner/storage` – PIN persistence helper.
++- `app/src/main/java/com/example/deviceowner/ui` – Activities and fragments for the user experience, including the blocking screen and admin console.
++
++## Building
++
++This repository uses the Android Gradle Plugin. Because the execution environment used to generate this project blocks access to Google's Maven repositories and Gradle distributions, the Gradle wrapper could not be generated automatically. Use a locally installed Gradle distribution that already has access to the required tooling to build the project, for example:
++
++```bash
++# From the project root
++gradle assembleDebug
++```
++
++When running locally for the first time, make sure your Gradle installation can reach `https://maven.google.com` to download the Android Gradle Plugin and related dependencies.
++
++## Provisioning as device owner
++
++1. Build and install the application on a test device or emulator running your custom ROM.
++2. Make the app the device owner (this usually requires a factory reset). Example using ADB while the device is in the setup wizard:
++   ```bash
++   adb shell dpm set-device-owner com.example.deviceowner/.admin.DeviceOwnerReceiver
++   ```
++3. Launch the **Device Owner Control** app and configure an administrator PIN when prompted.
++4. Use the toggle within the app to enable or disable Play Store access. Without the PIN, users cannot change the restriction or open the Play Store.
++
++## Notes
++
++- The Play Store is blocked by registering persistent preferred activities that redirect market intents to the `PlayStoreBlockedActivity`. Removing the restriction clears these overrides.
++- Auto updates are unaffected because the Play Store application package is still installed and able to run background services.
++- The PIN is stored in shared preferences using salted SHA-256 hashes, preventing retrieval of the original PIN if the device is compromised.
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..d32bb45cc8b0a1adeffd63353b66371e4c8de7df
+--- /dev/null
++++ b/app/build.gradle.kts
+@@ -0,0 +1,55 @@
++plugins {
++    id("com.android.application")
++    kotlin("android")
++}
++
++android {
++    namespace = "com.example.deviceowner"
++    compileSdk = 34
++
++    defaultConfig {
++        applicationId = "com.example.deviceowner"
++        minSdk = 26
++        targetSdk = 34
++        versionCode = 1
++        versionName = "1.0"
++
++        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
++    }
++
++    buildTypes {
++        release {
++            isMinifyEnabled = false
++            proguardFiles(
++                getDefaultProguardFile("proguard-android-optimize.txt"),
++                "proguard-rules.pro"
++            )
++        }
++    }
++
++    compileOptions {
++        sourceCompatibility = JavaVersion.VERSION_17
++        targetCompatibility = JavaVersion.VERSION_17
++    }
++
++    kotlinOptions {
++        jvmTarget = "17"
++    }
++
++    buildFeatures {
++        viewBinding = true
++    }
++}
++
++dependencies {
++    implementation("androidx.core:core-ktx:1.15.0")
++    implementation("androidx.appcompat:appcompat:1.7.0")
++    implementation("com.google.android.material:material:1.12.0")
++    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
++    implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
++    implementation("androidx.fragment:fragment-ktx:1.8.2")
++
++    testImplementation("junit:junit:4.13.2")
++    androidTestImplementation("androidx.test.ext:junit:1.2.1")
++    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
++}
+diff --git a/app/proguard-rules.pro b/app/proguard-rules.pro
+new file mode 100644
+index 0000000000000000000000000000000000000000..ebf60659c9fe398f58e62241c49cc2f90ccc85f4
+--- /dev/null
++++ b/app/proguard-rules.pro
+@@ -0,0 +1,2 @@
++# Keep rules for Device Admin receiver
++-keep class com.example.deviceowner.admin.** { *; }
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..a115bade2d037168ce5ef4d5e07fad2bdedd912e
+--- /dev/null
++++ b/app/src/main/AndroidManifest.xml
+@@ -0,0 +1,73 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools">
++
++    <application
++        android:allowBackup="true"
++        android:dataExtractionRules="@xml/data_extraction_rules"
++        android:fullBackupContent="@xml/backup_rules"
++        android:icon="@mipmap/ic_launcher"
++        android:label="@string/app_name"
++        android:roundIcon="@mipmap/ic_launcher_round"
++        android:supportsRtl="true"
++        android:theme="@style/Theme.DeviceOwner">
++
++        <activity
++            android:name="com.example.deviceowner.ui.MainActivity"
++            android:exported="true">
++            <intent-filter>
++                <action android:name="android.intent.action.MAIN" />
++
++                <category android:name="android.intent.category.LAUNCHER" />
++            </intent-filter>
++        </activity>
++
++        <activity
++            android:name="com.example.deviceowner.ui.PlayStoreBlockedActivity"
++            android:enabled="false"
++            android:exported="true"
++            android:excludeFromRecents="true"
++            android:taskAffinity="">
++            <intent-filter>
++                <action android:name="android.intent.action.MAIN" />
++
++                <category android:name="android.intent.category.APP_MARKET" />
++                <category android:name="android.intent.category.DEFAULT" />
++            </intent-filter>
++
++            <intent-filter>
++                <action android:name="android.intent.action.VIEW" />
++
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++
++                <data android:scheme="market" />
++            </intent-filter>
++
++            <intent-filter>
++                <action android:name="android.intent.action.VIEW" />
++
++                <category android:name="android.intent.category.DEFAULT" />
++                <category android:name="android.intent.category.BROWSABLE" />
++
++                <data android:scheme="https" />
++                <data android:host="play.google.com" />
++                <data android:pathPrefix="/store" />
++            </intent-filter>
++        </activity>
++
++        <receiver
++            android:name="com.example.deviceowner.admin.DeviceOwnerReceiver"
++            android:exported="true"
++            android:permission="android.permission.BIND_DEVICE_ADMIN">
++            <meta-data
++                android:name="android.app.device_admin"
++                android:resource="@xml/device_owner_receiver" />
++
++            <intent-filter>
++                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
++            </intent-filter>
++        </receiver>
++    </application>
++
++</manifest>
+diff --git a/app/src/main/java/com/example/deviceowner/admin/DeviceOwnerReceiver.kt b/app/src/main/java/com/example/deviceowner/admin/DeviceOwnerReceiver.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..84372ecf8af2898e18362c7e93fce7e28a7899df
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/admin/DeviceOwnerReceiver.kt
+@@ -0,0 +1,37 @@
++package com.example.deviceowner.admin
++
++import android.app.admin.DeviceAdminReceiver
++import android.app.admin.DevicePolicyManager
++import android.content.ComponentName
++import android.content.Context
++import android.content.Intent
++import android.widget.Toast
++import com.example.deviceowner.R
++
++/**
++ * Device admin receiver that acts as the entry point for device owner policies.
++ */
++class DeviceOwnerReceiver : DeviceAdminReceiver() {
++
++    override fun onEnabled(context: Context, intent: Intent) {
++        super.onEnabled(context, intent)
++        Toast.makeText(context, R.string.device_owner_enabled, Toast.LENGTH_LONG).show()
++    }
++
++    override fun onDisableRequested(context: Context, intent: Intent): CharSequence {
++        return context.getString(R.string.device_owner_disable_warning)
++    }
++
++    override fun onDisabled(context: Context, intent: Intent) {
++        super.onDisabled(context, intent)
++        Toast.makeText(context, R.string.device_owner_disabled, Toast.LENGTH_LONG).show()
++    }
++
++    companion object {
++        fun getComponentName(context: Context): ComponentName =
++            ComponentName(context.applicationContext, DeviceOwnerReceiver::class.java)
++
++        fun getDevicePolicyManager(context: Context): DevicePolicyManager =
++            context.getSystemService(DevicePolicyManager::class.java)
++    }
++}
+diff --git a/app/src/main/java/com/example/deviceowner/policy/PlayStoreRestrictionManager.kt b/app/src/main/java/com/example/deviceowner/policy/PlayStoreRestrictionManager.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..838a1a0c9b4c544a16679a79e0fc03c71a3d3670
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/policy/PlayStoreRestrictionManager.kt
+@@ -0,0 +1,129 @@
++package com.example.deviceowner.policy
++
++import android.app.admin.DevicePolicyManager
++import android.content.ComponentName
++import android.content.Context
++import android.content.Intent
++import android.content.pm.PackageManager
++import android.util.Log
++import com.example.deviceowner.admin.DeviceOwnerReceiver
++import com.example.deviceowner.ui.PlayStoreBlockedActivity
++
++/**
++ * Applies Play Store blocking policies when the device is managed by this device owner.
++ */
++class PlayStoreRestrictionManager(private val context: Context) {
++
++    private val devicePolicyManager: DevicePolicyManager =
++        DeviceOwnerReceiver.getDevicePolicyManager(context)
++    private val adminComponent: ComponentName = DeviceOwnerReceiver.getComponentName(context)
++    private val packageManager: PackageManager = context.packageManager
++    private val blockerComponent: ComponentName = ComponentName(context, PlayStoreBlockedActivity::class.java)
++
++    fun isDeviceOwner(): Boolean =
++        devicePolicyManager.isDeviceOwnerApp(context.packageName)
++
++    fun setPlayStoreRestricted(restricted: Boolean): Boolean {
++        if (!isDeviceOwner()) {
++            Log.w(TAG, "Attempted to change Play Store restriction without device owner privileges")
++            return false
++        }
++        if (restricted) {
++            enableBlockingComponent()
++            registerPersistentHandlers()
++        } else {
++            clearPersistentHandlers()
++            disableBlockingComponent()
++        }
++        return true
++    }
++
++    private fun enableBlockingComponent() {
++        packageManager.setComponentEnabledSetting(
++            blockerComponent,
++            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
++            PackageManager.DONT_KILL_APP
++        )
++    }
++
++    private fun disableBlockingComponent() {
++        packageManager.setComponentEnabledSetting(
++            blockerComponent,
++            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
++            PackageManager.DONT_KILL_APP
++        )
++    }
++
++    private fun registerPersistentHandlers() {
++        clearPersistentHandlers()
++
++        val mainFilter = Intent(Intent.ACTION_MAIN).apply {
++            addCategory(Intent.CATEGORY_APP_MARKET)
++            addCategory(Intent.CATEGORY_DEFAULT)
++        }.toIntentFilter()
++
++        val marketSchemeFilter = Intent(Intent.ACTION_VIEW).apply {
++            addCategory(Intent.CATEGORY_DEFAULT)
++            addCategory(Intent.CATEGORY_BROWSABLE)
++            data = android.net.Uri.parse("market://details")
++        }.toIntentFilter()
++
++        val httpsFilter = Intent(Intent.ACTION_VIEW).apply {
++            addCategory(Intent.CATEGORY_DEFAULT)
++            addCategory(Intent.CATEGORY_BROWSABLE)
++            data = android.net.Uri.parse("https://play.google.com/store/apps")
++        }.toIntentFilter()
++
++        devicePolicyManager.addPersistentPreferredActivity(
++            adminComponent,
++            mainFilter,
++            blockerComponent
++        )
++
++        devicePolicyManager.addPersistentPreferredActivity(
++            adminComponent,
++            marketSchemeFilter,
++            blockerComponent
++        )
++
++        devicePolicyManager.addPersistentPreferredActivity(
++            adminComponent,
++            httpsFilter,
++            blockerComponent
++        )
++    }
++
++    private fun clearPersistentHandlers() {
++        devicePolicyManager.clearPackagePersistentPreferredActivities(
++            adminComponent,
++            PLAY_STORE_PACKAGE
++        )
++    }
++
++    fun isPlayStoreRestricted(): Boolean {
++        return try {
++            val enabledSetting = packageManager.getComponentEnabledSetting(blockerComponent)
++            enabledSetting == PackageManager.COMPONENT_ENABLED_STATE_ENABLED
++        } catch (error: IllegalArgumentException) {
++            false
++        }
++    }
++
++    companion object {
++        private const val TAG = "PlayStoreRestriction"
++        private const val PLAY_STORE_PACKAGE = "com.android.vending"
++
++        private fun Intent.toIntentFilter(): android.content.IntentFilter {
++            val filter = android.content.IntentFilter(action)
++            categories?.forEach { category -> filter.addCategory(category) }
++            data?.let { uri ->
++                uri.scheme?.let { filter.addDataScheme(it) }
++                uri.host?.let { filter.addDataAuthority(it, null) }
++                if (uri.scheme == "https" || uri.scheme == "http") {
++                    filter.addDataPath(uri.path ?: "", android.content.IntentFilter.MATCH_PREFIX)
++                }
++            }
++            return filter
++        }
++    }
++}
+diff --git a/app/src/main/java/com/example/deviceowner/storage/PinStorage.kt b/app/src/main/java/com/example/deviceowner/storage/PinStorage.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..8fa810546d44f068463d95a1e68a796cae50055c
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/storage/PinStorage.kt
+@@ -0,0 +1,54 @@
++package com.example.deviceowner.storage
++
++import android.content.Context
++import android.util.Base64
++import java.security.MessageDigest
++import java.security.SecureRandom
++
++class PinStorage(context: Context) {
++
++    private val preferences =
++        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
++    private val secureRandom = SecureRandom()
++
++    fun isPinSet(): Boolean =
++        preferences.contains(KEY_PIN_HASH) && preferences.contains(KEY_PIN_SALT)
++
++    fun savePin(pin: String) {
++        val salt = ByteArray(SALT_LENGTH).also(secureRandom::nextBytes)
++        val hash = hash(pin, salt)
++        preferences.edit()
++            .putString(KEY_PIN_HASH, hash)
++            .putString(KEY_PIN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
++            .apply()
++    }
++
++    fun verifyPin(pin: String): Boolean {
++        val hash = preferences.getString(KEY_PIN_HASH, null) ?: return false
++        val saltEncoded = preferences.getString(KEY_PIN_SALT, null) ?: return false
++        val salt = Base64.decode(saltEncoded, Base64.NO_WRAP)
++        return hash(pin, salt) == hash
++    }
++
++    fun isRestrictionEnabled(): Boolean =
++        preferences.getBoolean(KEY_RESTRICTION_ENABLED, false)
++
++    fun setRestrictionEnabled(enabled: Boolean) {
++        preferences.edit().putBoolean(KEY_RESTRICTION_ENABLED, enabled).apply()
++    }
++
++    private fun hash(pin: String, salt: ByteArray): String {
++        val digest = MessageDigest.getInstance("SHA-256")
++        digest.update(salt)
++        val hashed = digest.digest(pin.toByteArray(Charsets.UTF_8))
++        return Base64.encodeToString(hashed, Base64.NO_WRAP)
++    }
++
++    companion object {
++        private const val PREF_NAME = "device_owner_pin"
++        private const val KEY_PIN_HASH = "pin_hash"
++        private const val KEY_PIN_SALT = "pin_salt"
++        private const val KEY_RESTRICTION_ENABLED = "restriction_enabled"
++        private const val SALT_LENGTH = 16
++    }
++}
+diff --git a/app/src/main/java/com/example/deviceowner/ui/ChangePinFragment.kt b/app/src/main/java/com/example/deviceowner/ui/ChangePinFragment.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..0112ee820c2293874a38af16982c414867e7aadf
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/ui/ChangePinFragment.kt
+@@ -0,0 +1,97 @@
++package com.example.deviceowner.ui
++
++import android.content.Context
++import android.os.Bundle
++import android.view.LayoutInflater
++import android.view.View
++import android.view.ViewGroup
++import androidx.fragment.app.Fragment
++import com.example.deviceowner.R
++import com.example.deviceowner.databinding.FragmentChangePinBinding
++import com.google.android.material.snackbar.Snackbar
++
++class ChangePinFragment : Fragment() {
++
++    private var _binding: FragmentChangePinBinding? = null
++    private val binding get() = _binding!!
++    private var callback: Callback? = null
++
++    override fun onAttach(context: Context) {
++        super.onAttach(context)
++        callback = context as? Callback
++    }
++
++    override fun onCreateView(
++        inflater: LayoutInflater,
++        container: ViewGroup?,
++        savedInstanceState: Bundle?
++    ): View {
++        _binding = FragmentChangePinBinding.inflate(inflater, container, false)
++        return binding.root
++    }
++
++    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
++        super.onViewCreated(view, savedInstanceState)
++        binding.updatePinButton.setOnClickListener { handleUpdatePin() }
++    }
++
++    override fun onResume() {
++        super.onResume()
++        binding.currentPinInput.setText("")
++        binding.newPinInput.setText("")
++        binding.confirmPinInput.setText("")
++        binding.currentPinLayout.error = null
++        binding.newPinLayout.error = null
++        binding.confirmPinLayout.error = null
++    }
++
++    private fun handleUpdatePin() {
++        val currentPin = binding.currentPinInput.text?.toString()?.trim() ?: ""
++        val newPin = binding.newPinInput.text?.toString()?.trim() ?: ""
++        val confirmPin = binding.confirmPinInput.text?.toString()?.trim() ?: ""
++
++        val activity = requireActivity() as MainActivity
++        val pinStorage = activity.getPinStorage()
++
++        binding.currentPinLayout.error = null
++        binding.newPinLayout.error = null
++        binding.confirmPinLayout.error = null
++
++        when {
++            !pinStorage.verifyPin(currentPin) -> {
++                binding.currentPinLayout.error = getString(R.string.pin_invalid)
++            }
++            newPin.length < MIN_PIN_LENGTH -> {
++                binding.newPinLayout.error = getString(R.string.pin_too_short)
++            }
++            newPin != confirmPin -> {
++                binding.confirmPinLayout.error = getString(R.string.pin_mismatch)
++            }
++            else -> {
++                pinStorage.savePin(newPin)
++                Snackbar.make(binding.root, R.string.pin_updated, Snackbar.LENGTH_SHORT).show()
++                callback?.onPinUpdated()
++            }
++        }
++    }
++
++    override fun onDestroyView() {
++        super.onDestroyView()
++        _binding = null
++    }
++
++    override fun onDetach() {
++        super.onDetach()
++        callback = null
++    }
++
++    interface Callback {
++        fun onPinUpdated()
++    }
++
++    companion object {
++        private const val MIN_PIN_LENGTH = 4
++
++        fun newInstance(): ChangePinFragment = ChangePinFragment()
++    }
++}
+diff --git a/app/src/main/java/com/example/deviceowner/ui/MainActivity.kt b/app/src/main/java/com/example/deviceowner/ui/MainActivity.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..581cec3277fce74b91de34c77b49ebec63d8a6f6
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/ui/MainActivity.kt
+@@ -0,0 +1,89 @@
++package com.example.deviceowner.ui
++
++import android.os.Bundle
++import androidx.appcompat.app.AppCompatActivity
++import com.example.deviceowner.R
++import com.example.deviceowner.policy.PlayStoreRestrictionManager
++import com.example.deviceowner.storage.PinStorage
++
++class MainActivity : AppCompatActivity(),
++    SetupPinFragment.Callback,
++    PinEntryFragment.Callback,
++    RestrictionFragment.Callback,
++    ChangePinFragment.Callback {
++
++    private lateinit var pinStorage: PinStorage
++    private lateinit var restrictionManager: PlayStoreRestrictionManager
++
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++        setContentView(R.layout.activity_main)
++
++        pinStorage = PinStorage(this)
++        restrictionManager = PlayStoreRestrictionManager(this)
++
++        if (savedInstanceState == null) {
++            showInitialScreen()
++        }
++    }
++
++    private fun showInitialScreen() {
++        if (!pinStorage.isPinSet()) {
++            showSetupPin()
++        } else {
++            showPinEntry()
++        }
++    }
++
++    private fun showSetupPin() {
++        supportFragmentManager.beginTransaction()
++            .replace(R.id.content_container, SetupPinFragment.newInstance())
++            .commit()
++    }
++
++    private fun showPinEntry() {
++        supportFragmentManager.beginTransaction()
++            .replace(R.id.content_container, PinEntryFragment.newInstance())
++            .commit()
++    }
++
++    private fun showRestrictionScreen() {
++        supportFragmentManager.beginTransaction()
++            .replace(R.id.content_container, RestrictionFragment.newInstance())
++            .commit()
++    }
++
++    override fun onPinCreated() {
++        showPinEntry()
++    }
++
++    override fun onPinVerified() {
++        showRestrictionScreen()
++    }
++
++    override fun onRequestLock() {
++        showPinEntry()
++    }
++
++    override fun onRestrictionChanged(enabled: Boolean): Boolean {
++        val applied = restrictionManager.setPlayStoreRestricted(enabled)
++        if (applied) {
++            pinStorage.setRestrictionEnabled(enabled)
++        }
++        return applied
++    }
++
++    override fun onRequestChangePin() {
++        supportFragmentManager.beginTransaction()
++            .replace(R.id.content_container, ChangePinFragment.newInstance())
++            .addToBackStack(null)
++            .commit()
++    }
++
++    override fun onPinUpdated() {
++        supportFragmentManager.popBackStack()
++    }
++
++    fun getPinStorage(): PinStorage = pinStorage
++    fun getRestrictionManager(): PlayStoreRestrictionManager = restrictionManager
++}
+diff --git a/app/src/main/java/com/example/deviceowner/ui/PinEntryFragment.kt b/app/src/main/java/com/example/deviceowner/ui/PinEntryFragment.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..506d8ba48922e6ae572cdd228ed7b3dc6cbe7580
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/ui/PinEntryFragment.kt
+@@ -0,0 +1,73 @@
++package com.example.deviceowner.ui
++
++import android.content.Context
++import android.os.Bundle
++import android.view.LayoutInflater
++import android.view.View
++import android.view.ViewGroup
++import androidx.fragment.app.Fragment
++import com.example.deviceowner.R
++import com.example.deviceowner.databinding.FragmentPinEntryBinding
++import com.google.android.material.snackbar.Snackbar
++
++class PinEntryFragment : Fragment() {
++
++    private var _binding: FragmentPinEntryBinding? = null
++    private val binding get() = _binding!!
++    private var callback: Callback? = null
++
++    override fun onAttach(context: Context) {
++        super.onAttach(context)
++        callback = context as? Callback
++    }
++
++    override fun onCreateView(
++        inflater: LayoutInflater,
++        container: ViewGroup?,
++        savedInstanceState: Bundle?
++    ): View {
++        _binding = FragmentPinEntryBinding.inflate(inflater, container, false)
++        return binding.root
++    }
++
++    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
++        super.onViewCreated(view, savedInstanceState)
++        binding.continueButton.setOnClickListener { validatePin() }
++    }
++
++    override fun onResume() {
++        super.onResume()
++        binding.pinInput.setText("")
++        binding.pinLayout.error = null
++    }
++
++    private fun validatePin() {
++        val pin = binding.pinInput.text?.toString()?.trim() ?: ""
++        val isValid = (requireActivity() as MainActivity).getPinStorage().verifyPin(pin)
++        if (isValid) {
++            binding.pinLayout.error = null
++            callback?.onPinVerified()
++        } else {
++            binding.pinLayout.error = getString(R.string.pin_invalid)
++            Snackbar.make(binding.root, R.string.incorrect_pin, Snackbar.LENGTH_SHORT).show()
++        }
++    }
++
++    override fun onDestroyView() {
++        super.onDestroyView()
++        _binding = null
++    }
++
++    override fun onDetach() {
++        super.onDetach()
++        callback = null
++    }
++
++    interface Callback {
++        fun onPinVerified()
++    }
++
++    companion object {
++        fun newInstance(): PinEntryFragment = PinEntryFragment()
++    }
++}
+diff --git a/app/src/main/java/com/example/deviceowner/ui/PlayStoreBlockedActivity.kt b/app/src/main/java/com/example/deviceowner/ui/PlayStoreBlockedActivity.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..d2bd600c94461395648f2ce6dc63184272f06dff
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/ui/PlayStoreBlockedActivity.kt
+@@ -0,0 +1,12 @@
++package com.example.deviceowner.ui
++
++import android.os.Bundle
++import androidx.appcompat.app.AppCompatActivity
++import com.example.deviceowner.R
++
++class PlayStoreBlockedActivity : AppCompatActivity() {
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++        setContentView(R.layout.activity_play_store_blocked)
++    }
++}
+diff --git a/app/src/main/java/com/example/deviceowner/ui/RestrictionFragment.kt b/app/src/main/java/com/example/deviceowner/ui/RestrictionFragment.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..87a1c08b1e367247c0c8355a3d807d6de674c396
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/ui/RestrictionFragment.kt
+@@ -0,0 +1,102 @@
++package com.example.deviceowner.ui
++
++import android.content.Context
++import android.os.Bundle
++import android.view.LayoutInflater
++import android.view.View
++import android.view.ViewGroup
++import android.widget.CompoundButton
++import androidx.core.view.isVisible
++import androidx.fragment.app.Fragment
++import com.example.deviceowner.R
++import com.example.deviceowner.databinding.FragmentRestrictionBinding
++import com.google.android.material.snackbar.Snackbar
++
++class RestrictionFragment : Fragment() {
++
++    private var _binding: FragmentRestrictionBinding? = null
++    private val binding get() = _binding!!
++    private var callback: Callback? = null
++
++    override fun onAttach(context: Context) {
++        super.onAttach(context)
++        callback = context as? Callback
++    }
++
++    override fun onCreateView(
++        inflater: LayoutInflater,
++        container: ViewGroup?,
++        savedInstanceState: Bundle?
++    ): View {
++        _binding = FragmentRestrictionBinding.inflate(inflater, container, false)
++        return binding.root
++    }
++
++    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
++        super.onViewCreated(view, savedInstanceState)
++        binding.lockButton.setOnClickListener { callback?.onRequestLock() }
++        binding.changePinButton.setOnClickListener { callback?.onRequestChangePin() }
++        binding.restrictionSwitch.setOnCheckedChangeListener(switchListener)
++    }
++
++    override fun onResume() {
++        super.onResume()
++        refreshState()
++    }
++
++    private fun refreshState() {
++        val binding = _binding ?: return
++        val activity = requireActivity() as MainActivity
++        val isRestricted = activity.getPinStorage().isRestrictionEnabled()
++        val isDeviceOwner = activity.getRestrictionManager().isDeviceOwner()
++        setSwitchCheckedWithoutCallback(isRestricted)
++        binding.restrictionSwitch.isEnabled = isDeviceOwner
++        binding.deviceOwnerWarning.isVisible = !isDeviceOwner
++        updateStatusText(isRestricted)
++    }
++
++    private fun setSwitchCheckedWithoutCallback(checked: Boolean) {
++        val binding = _binding ?: return
++        binding.restrictionSwitch.setOnCheckedChangeListener(null)
++        binding.restrictionSwitch.isChecked = checked
++        binding.restrictionSwitch.setOnCheckedChangeListener(switchListener)
++    }
++
++    private fun updateStatusText(restricted: Boolean) {
++        _binding?.statusText?.setText(
++            if (restricted) R.string.restriction_status_on else R.string.restriction_status_off
++        )
++    }
++
++    override fun onDestroyView() {
++        _binding?.restrictionSwitch?.setOnCheckedChangeListener(null)
++        super.onDestroyView()
++        _binding = null
++    }
++
++    override fun onDetach() {
++        super.onDetach()
++        callback = null
++    }
++
++    interface Callback {
++        fun onRestrictionChanged(enabled: Boolean): Boolean
++        fun onRequestLock()
++        fun onRequestChangePin()
++    }
++
++    companion object {
++        fun newInstance(): RestrictionFragment = RestrictionFragment()
++    }
++
++    private val switchListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
++        val binding = _binding ?: return@OnCheckedChangeListener
++        val applied = callback?.onRestrictionChanged(isChecked) ?: false
++        if (applied) {
++            updateStatusText(isChecked)
++        } else {
++            Snackbar.make(binding.root, R.string.restrictions_error_generic, Snackbar.LENGTH_SHORT).show()
++            setSwitchCheckedWithoutCallback(!isChecked)
++        }
++    }
++}
+diff --git a/app/src/main/java/com/example/deviceowner/ui/SetupPinFragment.kt b/app/src/main/java/com/example/deviceowner/ui/SetupPinFragment.kt
+new file mode 100644
+index 0000000000000000000000000000000000000000..66ea6c9ccb4cb7b27a1377ca2ca9f1f547b6529a
+--- /dev/null
++++ b/app/src/main/java/com/example/deviceowner/ui/SetupPinFragment.kt
+@@ -0,0 +1,88 @@
++package com.example.deviceowner.ui
++
++import android.content.Context
++import android.os.Bundle
++import android.view.LayoutInflater
++import android.view.View
++import android.view.ViewGroup
++import androidx.fragment.app.Fragment
++import com.example.deviceowner.R
++import com.example.deviceowner.databinding.FragmentSetupPinBinding
++import com.google.android.material.snackbar.Snackbar
++
++class SetupPinFragment : Fragment() {
++
++    private var _binding: FragmentSetupPinBinding? = null
++    private val binding get() = _binding!!
++    private var callback: Callback? = null
++
++    override fun onAttach(context: Context) {
++        super.onAttach(context)
++        callback = context as? Callback
++    }
++
++    override fun onCreateView(
++        inflater: LayoutInflater,
++        container: ViewGroup?,
++        savedInstanceState: Bundle?
++    ): View {
++        _binding = FragmentSetupPinBinding.inflate(inflater, container, false)
++        return binding.root
++    }
++
++    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
++        super.onViewCreated(view, savedInstanceState)
++        binding.continueButton.setOnClickListener { handleContinue() }
++    }
++
++    override fun onResume() {
++        super.onResume()
++        binding.pinInput.setText("")
++        binding.confirmPinInput.setText("")
++        binding.pinLayout.error = null
++        binding.confirmPinLayout.error = null
++    }
++
++    private fun handleContinue() {
++        val pin = binding.pinInput.text?.toString()?.trim() ?: ""
++        val confirmPin = binding.confirmPinInput.text?.toString()?.trim() ?: ""
++
++        binding.pinLayout.error = null
++        binding.confirmPinLayout.error = null
++
++        when {
++            pin.length < MIN_PIN_LENGTH ->
++                binding.pinLayout.error = getString(R.string.pin_too_short)
++            pin != confirmPin ->
++                binding.confirmPinLayout.error = getString(R.string.pin_mismatch)
++            else -> {
++                val activity = requireActivity() as MainActivity
++                activity.getPinStorage().savePin(pin)
++                activity.getPinStorage().setRestrictionEnabled(false)
++                Snackbar.make(binding.root, R.string.pin_saved, Snackbar.LENGTH_SHORT)
++                    .show()
++                callback?.onPinCreated()
++            }
++        }
++    }
++
++    override fun onDestroyView() {
++        super.onDestroyView()
++        _binding = null
++    }
++
++    override fun onDetach() {
++        super.onDetach()
++        callback = null
++    }
++
++    interface Callback {
++        fun onPinCreated()
++    }
++
++    companion object {
++        private const val MIN_PIN_LENGTH = 4
++
++        fun newInstance(): SetupPinFragment = SetupPinFragment()
++    }
++}
+diff --git a/app/src/main/res/drawable/ic_launcher_background.xml b/app/src/main/res/drawable/ic_launcher_background.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..4fe49b4064068b5146e957caec338b1d29ccf821
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_launcher_background.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="utf-8"?>
++<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
++    <solid android:color="#6750A4" />
++</shape>
+diff --git a/app/src/main/res/drawable/ic_launcher_foreground.xml b/app/src/main/res/drawable/ic_launcher_foreground.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..53a5e73197033f7fc2712d1433ca1de5b71a6482
+--- /dev/null
++++ b/app/src/main/res/drawable/ic_launcher_foreground.xml
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="utf-8"?>
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="108dp"
++    android:height="108dp"
++    android:viewportWidth="108"
++    android:viewportHeight="108">
++    <group android:scaleX="0.6"
++        android:scaleY="0.6"
++        android:translateX="21.6"
++        android:translateY="21.6">
++        <path
++            android:fillColor="#FFFFFF"
++            android:pathData="M48,4L12,20v24c0,24.3 15,47.3 36,52c21,-4.7 36,-27.7 36,-52V20L48,4zM48,30c6.6,0 12,5.4 12,12s-5.4,12 -12,12s-12,-5.4 -12,-12S41.4,30 48,30zM48,84c-9.1,0 -17.3,-3.8 -23.4,-10.1c3.5,-6.4 10.3,-10.9 18.4,-10.9h10c8.1,0 14.9,4.4 18.4,10.9C65.3,80.2 57.1,84 48,84z" />
++    </group>
++</vector>
+diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..18802d99ecc0ee82b4097ec6bea1c7dbec51f90b
+--- /dev/null
++++ b/app/src/main/res/layout/activity_main.xml
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <FrameLayout
++        android:id="@+id/content_container"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent" />
++
++</androidx.coordinatorlayout.widget.CoordinatorLayout>
+diff --git a/app/src/main/res/layout/activity_play_store_blocked.xml b/app/src/main/res/layout/activity_play_store_blocked.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7df72f7fa019bb7a8f32870371d45f467a4060bc
+--- /dev/null
++++ b/app/src/main/res/layout/activity_play_store_blocked.xml
+@@ -0,0 +1,23 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:gravity="center"
++    android:orientation="vertical"
++    android:padding="24dp">
++
++    <TextView
++        android:id="@+id/title"
++        style="@style/TextAppearance.MaterialComponents.Headline5"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="@string/blocked_message_title" />
++
++    <TextView
++        android:id="@+id/message"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginTop="16dp"
++        android:text="@string/blocked_message_body" />
++
++</LinearLayout>
+diff --git a/app/src/main/res/layout/fragment_change_pin.xml b/app/src/main/res/layout/fragment_change_pin.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e8c149f450a3db7868c80410f79fc05f9f609a6
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_change_pin.xml
+@@ -0,0 +1,78 @@
++<?xml version="1.0" encoding="utf-8"?>
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:padding="24dp">
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="vertical">
++
++        <TextView
++            style="@style/TextAppearance.MaterialComponents.Headline5"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:text="@string/enter_new_pin_title" />
++
++        <com.google.android.material.textfield.TextInputLayout
++            android:id="@+id/current_pin_layout"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="24dp"
++            app:endIconMode="password_toggle">
++
++            <com.google.android.material.textfield.TextInputEditText
++                android:id="@+id/current_pin_input"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:hint="@string/current_pin_hint"
++                android:importantForAutofill="no"
++                android:inputType="numberPassword"
++                android:maxLength="12" />
++        </com.google.android.material.textfield.TextInputLayout>
++
++        <com.google.android.material.textfield.TextInputLayout
++            android:id="@+id/new_pin_layout"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="16dp"
++            app:endIconMode="password_toggle">
++
++            <com.google.android.material.textfield.TextInputEditText
++                android:id="@+id/new_pin_input"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:hint="@string/pin_hint"
++                android:importantForAutofill="no"
++                android:inputType="numberPassword"
++                android:maxLength="12" />
++        </com.google.android.material.textfield.TextInputLayout>
++
++        <com.google.android.material.textfield.TextInputLayout
++            android:id="@+id/confirm_pin_layout"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="16dp"
++            app:endIconMode="password_toggle">
++
++            <com.google.android.material.textfield.TextInputEditText
++                android:id="@+id/confirm_pin_input"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:hint="@string/confirm_pin_label"
++                android:importantForAutofill="no"
++                android:inputType="numberPassword"
++                android:maxLength="12" />
++        </com.google.android.material.textfield.TextInputLayout>
++
++        <com.google.android.material.button.MaterialButton
++            android:id="@+id/update_pin_button"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="32dp"
++            android:text="@string/update_pin_button" />
++
++    </LinearLayout>
++</ScrollView>
+diff --git a/app/src/main/res/layout/fragment_pin_entry.xml b/app/src/main/res/layout/fragment_pin_entry.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..80afdfa17d22f5194301164fa81685b967aef69b
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_pin_entry.xml
+@@ -0,0 +1,52 @@
++<?xml version="1.0" encoding="utf-8"?>
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:padding="24dp">
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="vertical">
++
++        <TextView
++            android:id="@+id/title"
++            style="@style/TextAppearance.MaterialComponents.Headline5"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:text="@string/pin_entry_title" />
++
++        <TextView
++            android:id="@+id/description"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="12dp"
++            android:text="@string/pin_entry_description" />
++
++        <com.google.android.material.textfield.TextInputLayout
++            android:id="@+id/pin_layout"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="24dp"
++            app:endIconMode="password_toggle">
++
++            <com.google.android.material.textfield.TextInputEditText
++                android:id="@+id/pin_input"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:hint="@string/pin_hint"
++                android:importantForAutofill="no"
++                android:inputType="numberPassword"
++                android:maxLength="12" />
++        </com.google.android.material.textfield.TextInputLayout>
++
++        <com.google.android.material.button.MaterialButton
++            android:id="@+id/continue_button"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="32dp"
++            android:text="@string/continue_button" />
++
++    </LinearLayout>
++</ScrollView>
+diff --git a/app/src/main/res/layout/fragment_restriction.xml b/app/src/main/res/layout/fragment_restriction.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..5a8ed1a47047cae011a752e54e63890ceb3bba5b
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_restriction.xml
+@@ -0,0 +1,51 @@
++<?xml version="1.0" encoding="utf-8"?>
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:padding="24dp">
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="vertical">
++
++        <TextView
++            android:id="@+id/status_text"
++            style="@style/TextAppearance.MaterialComponents.Headline6"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:text="@string/restriction_status_off" />
++
++        <com.google.android.material.materialswitch.MaterialSwitch
++            android:id="@+id/restriction_switch"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="24dp"
++            android:text="@string/restriction_toggle_label" />
++
++        <TextView
++            android:id="@+id/device_owner_warning"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="24dp"
++            android:visibility="gone"
++            android:text="@string/status_device_owner_missing" />
++
++        <com.google.android.material.button.MaterialButton
++            android:id="@+id/change_pin_button"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="32dp"
++            android:text="@string/change_pin_button" />
++
++        <com.google.android.material.button.MaterialButton
++            android:id="@+id/lock_button"
++            style="@style/Widget.MaterialComponents.Button.TextButton"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="16dp"
++            android:text="@string/lock_button" />
++
++    </LinearLayout>
++</ScrollView>
+diff --git a/app/src/main/res/layout/fragment_setup_pin.xml b/app/src/main/res/layout/fragment_setup_pin.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..75f364d06a56279dd33bf8f6b80e28443e39e3fe
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_setup_pin.xml
+@@ -0,0 +1,68 @@
++<?xml version="1.0" encoding="utf-8"?>
++<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:padding="24dp">
++
++    <LinearLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="vertical">
++
++        <TextView
++            android:id="@+id/title"
++            style="@style/TextAppearance.MaterialComponents.Headline5"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:text="@string/pin_setup_title" />
++
++        <TextView
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="12dp"
++            android:text="@string/pin_setup_instructions" />
++
++        <com.google.android.material.textfield.TextInputLayout
++            android:id="@+id/pin_layout"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="24dp"
++            app:endIconMode="password_toggle">
++
++            <com.google.android.material.textfield.TextInputEditText
++                android:id="@+id/pin_input"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:hint="@string/pin_hint"
++                android:importantForAutofill="no"
++                android:inputType="numberPassword"
++                android:maxLength="12" />
++        </com.google.android.material.textfield.TextInputLayout>
++
++        <com.google.android.material.textfield.TextInputLayout
++            android:id="@+id/confirm_pin_layout"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="16dp"
++            app:endIconMode="password_toggle">
++
++            <com.google.android.material.textfield.TextInputEditText
++                android:id="@+id/confirm_pin_input"
++                android:layout_width="match_parent"
++                android:layout_height="wrap_content"
++                android:hint="@string/confirm_pin_hint"
++                android:importantForAutofill="no"
++                android:inputType="numberPassword"
++                android:maxLength="12" />
++        </com.google.android.material.textfield.TextInputLayout>
++
++        <com.google.android.material.button.MaterialButton
++            android:id="@+id/continue_button"
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:layout_marginTop="32dp"
++            android:text="@string/continue_button" />
++
++    </LinearLayout>
++</ScrollView>
+diff --git a/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml b/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..6b78462d615bfe7003b31d0534dcad416b75ad25
+--- /dev/null
++++ b/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
++    <background android:drawable="@drawable/ic_launcher_background" />
++    <foreground android:drawable="@drawable/ic_launcher_foreground" />
++</adaptive-icon>
+diff --git a/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml b/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..6b78462d615bfe7003b31d0534dcad416b75ad25
+--- /dev/null
++++ b/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
++    <background android:drawable="@drawable/ic_launcher_background" />
++    <foreground android:drawable="@drawable/ic_launcher_foreground" />
++</adaptive-icon>
+diff --git a/app/src/main/res/values/colors.xml b/app/src/main/res/values/colors.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f34f235ef092e68fee92bc3a28da1c5bb17aaa2
+--- /dev/null
++++ b/app/src/main/res/values/colors.xml
+@@ -0,0 +1,8 @@
++<resources>
++    <color name="md_theme_light_primary">#6750A4</color>
++    <color name="md_theme_light_onPrimary">#FFFFFF</color>
++    <color name="md_theme_light_background">#FFFBFE</color>
++    <color name="md_theme_light_onBackground">#1C1B1F</color>
++    <color name="md_theme_light_surface">#FFFBFE</color>
++    <color name="md_theme_light_onSurface">#1C1B1F</color>
++</resources>
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..8fd9afc3a1381874db4d673e151a5bb5d9f75e41
+--- /dev/null
++++ b/app/src/main/res/values/strings.xml
+@@ -0,0 +1,32 @@
++<resources>
++    <string name="app_name">Device Owner Control</string>
++    <string name="pin_setup_title">Set Up PIN</string>
++    <string name="pin_setup_instructions">Create a PIN to protect Play Store access.</string>
++    <string name="pin_entry_title">Enter PIN</string>
++    <string name="pin_entry_description">Enter the administrator PIN to manage Play Store restrictions.</string>
++    <string name="pin_hint">PIN</string>
++    <string name="confirm_pin_hint">Confirm PIN</string>
++    <string name="continue_button">Continue</string>
++    <string name="pin_mismatch">PIN codes do not match.</string>
++    <string name="pin_too_short">PIN must be at least 4 digits.</string>
++    <string name="incorrect_pin">Incorrect PIN. Try again.</string>
++    <string name="restriction_status_on">Play Store access is blocked.</string>
++    <string name="restriction_status_off">Play Store access is allowed.</string>
++    <string name="restriction_toggle_label">Block Play Store access</string>
++    <string name="status_device_owner_missing">This device must provision this app as the device owner to manage Play Store access.</string>
++    <string name="blocked_message_title">Play Store blocked</string>
++    <string name="blocked_message_body">The device owner has restricted Play Store access. Enter the administrator PIN in the Device Owner Control app to enable temporary access.</string>
++    <string name="lock_button">Lock</string>
++    <string name="change_pin_button">Change PIN</string>
++    <string name="pin_saved">PIN saved.</string>
++    <string name="pin_updated">PIN updated.</string>
++    <string name="enter_new_pin_title">Set a new PIN</string>
++    <string name="confirm_pin_label">Confirm PIN</string>
++    <string name="current_pin_hint">Current PIN</string>
++    <string name="update_pin_button">Update PIN</string>
++    <string name="pin_invalid">Invalid PIN.</string>
++    <string name="restrictions_error_generic">Unable to update the Play Store restriction. Check that this app is the device owner.</string>
++    <string name="device_owner_enabled">Device owner enabled.</string>
++    <string name="device_owner_disabled">Device owner disabled.</string>
++    <string name="device_owner_disable_warning">Disabling the device owner will remove Play Store protections.</string>
++</resources>
+diff --git a/app/src/main/res/values/themes.xml b/app/src/main/res/values/themes.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..d2be815a59d318ad27d5fca916e18df57ba9636a
+--- /dev/null
++++ b/app/src/main/res/values/themes.xml
+@@ -0,0 +1,6 @@
++<resources xmlns:tools="http://schemas.android.com/tools">
++    <style name="Theme.DeviceOwner" parent="Theme.Material3.Light.NoActionBar">
++        <item name="colorPrimary">@color/md_theme_light_primary</item>
++        <item name="android:statusBarColor" tools:targetApi="l">@color/md_theme_light_primary</item>
++    </style>
++</resources>
+diff --git a/app/src/main/res/xml/backup_rules.xml b/app/src/main/res/xml/backup_rules.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..bdce9c803f83734beaf6c84a97ffdc35e44cc197
+--- /dev/null
++++ b/app/src/main/res/xml/backup_rules.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="utf-8"?>
++<full-backup-content xmlns:android="http://schemas.android.com/apk/res/android">
++    <include domain="sharedpref" />
++</full-backup-content>
+diff --git a/app/src/main/res/xml/data_extraction_rules.xml b/app/src/main/res/xml/data_extraction_rules.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb921cb843b4ab4629a9fcd77d8ec5f30bb5ff26
+--- /dev/null
++++ b/app/src/main/res/xml/data_extraction_rules.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="utf-8"?>
++<data-extraction-rules xmlns:android="http://schemas.android.com/apk/res/android">
++    <cloud-backup>
++        <include domain="sharedpref" />
++    </cloud-backup>
++    <device-transfer>
++        <include domain="sharedpref" />
++    </device-transfer>
++</data-extraction-rules>
+diff --git a/app/src/main/res/xml/device_owner_receiver.xml b/app/src/main/res/xml/device_owner_receiver.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..4bd62b0c074d98e809f7f71ca236eaf5bac686f9
+--- /dev/null
++++ b/app/src/main/res/xml/device_owner_receiver.xml
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="utf-8"?>
++<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
++    <uses-policies>
++        <limit-password />
++        <force-lock />
++        <wipe-data />
++    </uses-policies>
++</device-admin>
+diff --git a/build.gradle.kts b/build.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..d58efe8fb0edeb7466a45537d7f8c45ed2978d73
+--- /dev/null
++++ b/build.gradle.kts
+@@ -0,0 +1,4 @@
++plugins {
++    id("com.android.application") version "8.2.2" apply false
++    kotlin("android") version "1.9.21" apply false
++}
+diff --git a/gradle.properties b/gradle.properties
+new file mode 100644
+index 0000000000000000000000000000000000000000..e6961679fc95d6da9ab1dc56ee2e9d98ecbe6e63
+--- /dev/null
++++ b/gradle.properties
+@@ -0,0 +1,3 @@
++org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
++android.useAndroidX=true
++kotlin.code.style=official
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+new file mode 100644
+index 0000000000000000000000000000000000000000..22e300b5014dc465914a57b4ab6646d6b36fe6af
+--- /dev/null
++++ b/settings.gradle.kts
+@@ -0,0 +1,18 @@
++pluginManagement {
++    repositories {
++        google()
++        mavenCentral()
++        gradlePluginPortal()
++    }
++}
++
++dependencyResolutionManagement {
++    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
++    repositories {
++        google()
++        mavenCentral()
++    }
++}
++
++rootProject.name = "DeviceOwner"
++include(":app")
+
