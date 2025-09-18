@@ -5,9 +5,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.PatternMatcher
 import android.util.Log
 import eu.dumbdroid.deviceowner.admin.DeviceOwnerReceiver
 import eu.dumbdroid.deviceowner.ui.PlayStoreBlockedActivity
+import android.os.UserManager
 
 /**
  * Applies Play Store blocking policies when the device is managed by this device owner.
@@ -28,6 +30,7 @@ class PlayStoreRestrictionManager(private val context: Context) {
             Log.w(TAG, "Attempted to change Play Store restriction without device owner privileges")
             return false
         }
+	setPlayStoreSuspendedState(restricted)
         if (restricted) {
             enableBlockingComponent()
             registerPersistentHandlers()
@@ -36,6 +39,29 @@ class PlayStoreRestrictionManager(private val context: Context) {
             disableBlockingComponent()
         }
         return true
+    }
+
+    private fun setPlayStoreSuspendedState(suspended: Boolean) {
+	devicePolicyManager.setApplicationHidden(adminComponent, "com.android.vending", suspended)
+	if (suspended) {
+	    devicePolicyManager.addUserRestriction(adminComponent, UserManager.DISALLOW_INSTALL_APPS)
+	    devicePolicyManager.addUserRestriction(adminComponent, UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES)
+	} else {
+	    devicePolicyManager.clearUserRestriction(adminComponent, UserManager.DISALLOW_INSTALL_APPS)
+	    devicePolicyManager.clearUserRestriction(adminComponent, UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES)
+        }
+
+/*        val failedPackages = devicePolicyManager.setPackagesSuspended(
+            adminComponent,
+            arrayOf(PLAY_STORE_PACKAGE),
+            suspended,
+        )
+        if (failedPackages.isNotEmpty()) {
+            Log.w(
+                TAG,
+                "Failed to change suspended state for packages: ${failedPackages.joinToString()}",
+            )
+        }*/
     }
 
     private fun enableBlockingComponent() {
@@ -120,7 +146,7 @@ class PlayStoreRestrictionManager(private val context: Context) {
                 uri.scheme?.let { filter.addDataScheme(it) }
                 uri.host?.let { filter.addDataAuthority(it, null) }
                 if (uri.scheme == "https" || uri.scheme == "http") {
-                    filter.addDataPath(uri.path ?: "", android.content.IntentFilter.MATCH_PREFIX)
+                    filter.addDataPath(uri.path ?: "", PatternMatcher.PATTERN_PREFIX)
                 }
             }
             return filter

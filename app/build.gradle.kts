@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.deviceowner"
+    namespace = "eu.dumbdroid.deviceowner"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.deviceowner"
+        applicationId = "eu.dumbdroid.deviceowner"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -38,6 +38,12 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+
+    sourceSets["main"].apply {
+        manifest.srcFile("AndroidManifest.xml")
+        java.srcDirs("src/main/java")
+        res.srcDirs("res")
     }
 }
 

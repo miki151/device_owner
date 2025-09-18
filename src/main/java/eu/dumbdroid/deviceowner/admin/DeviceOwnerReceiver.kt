@@ -32,6 +32,8 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
             ComponentName(context.applicationContext, DeviceOwnerReceiver::class.java)
 
         fun getDevicePolicyManager(context: Context): DevicePolicyManager =
-            context.getSystemService(DevicePolicyManager::class.java)
+            checkNotNull(context.getSystemService(DevicePolicyManager::class.java)) {
+                "DevicePolicyManager service is required"
+            }
     }
 }

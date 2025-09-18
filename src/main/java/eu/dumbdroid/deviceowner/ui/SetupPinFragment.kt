@@ -5,15 +5,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import eu.dumbdroid.deviceowner.R
-import eu.dumbdroid.deviceowner.databinding.FragmentSetupPinBinding
-import com.google.android.material.snackbar.Snackbar
 
 class SetupPinFragment : Fragment() {
 
-    private var _binding: FragmentSetupPinBinding? = null
-    private val binding get() = _binding!!
+    private var pinInput: EditText? = null
+    private var confirmPinInput: EditText? = null
+    private var continueButton: Button? = null
     private var callback: Callback? = null
 
     override fun onAttach(context: Context) {
@@ -24,51 +26,53 @@ class SetupPinFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
-        _binding = FragmentSetupPinBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding.continueButton.setOnClickListener { handleContinue() }
+        val view = inflater.inflate(R.layout.fragment_setup_pin, container, false)
+        pinInput = view.findViewById(R.id.pin_input)
+        confirmPinInput = view.findViewById(R.id.confirm_pin_input)
+        val button = view.findViewById<Button>(R.id.continue_button)
+        button!!.setOnClickListener { handleContinue() }
+        continueButton = button
+        return view
     }
 
     override fun onResume() {
         super.onResume()
-        binding.pinInput.setText("")
-        binding.confirmPinInput.setText("")
-        binding.pinLayout.error = null
-        binding.confirmPinLayout.error = null
+        pinInput?.setText("")
+        confirmPinInput?.setText("")
+        pinInput?.error = null
+        confirmPinInput?.error = null
     }
 
     private fun handleContinue() {
-        val pin = binding.pinInput.text?.toString()?.trim() ?: ""
-        val confirmPin = binding.confirmPinInput.text?.toString()?.trim() ?: ""
+        val pin = pinInput?.text?.toString()?.trim().orEmpty()
+        val confirmPin = confirmPinInput?.text?.toString()?.trim().orEmpty()
 
-        binding.pinLayout.error = null
-        binding.confirmPinLayout.error = null
+        pinInput?.error = null
+        confirmPinInput?.error = null
 
         when {
             pin.length < MIN_PIN_LENGTH ->
-                binding.pinLayout.error = getString(R.string.pin_too_short)
+                pinInput?.error = getString(R.string.pin_too_short)
             pin != confirmPin ->
-                binding.confirmPinLayout.error = getString(R.string.pin_mismatch)
+                confirmPinInput?.error = getString(R.string.pin_mismatch)
             else -> {
                 val activity = requireActivity() as MainActivity
                 activity.getPinStorage().savePin(pin)
                 activity.getPinStorage().setRestrictionEnabled(false)
-                Snackbar.make(binding.root, R.string.pin_saved, Snackbar.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(requireContext(), R.string.pin_saved, Toast.LENGTH_SHORT).show()
                 callback?.onPinCreated()
             }
         }
     }
 
     override fun onDestroyView() {
+        continueButton?.setOnClickListener(null)
+        pinInput = null
+        confirmPinInput = null
+        continueButton = null
         super.onDestroyView()
-        _binding = null
     }
 
     override fun onDetach() {

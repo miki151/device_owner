@@ -5,17 +5,22 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.CompoundButton
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import eu.dumbdroid.deviceowner.R
-import eu.dumbdroid.deviceowner.databinding.FragmentRestrictionBinding
-import com.google.android.material.snackbar.Snackbar
 
 class RestrictionFragment : Fragment() {
 
-    private var _binding: FragmentRestrictionBinding? = null
-    private val binding get() = _binding!!
+    private var statusText: TextView? = null
+    private var restrictionSwitch: SwitchCompat? = null
+    private var deviceOwnerWarning: TextView? = null
+    private var changePinButton: Button? = null
+    private var lockButton: Button? = null
     private var callback: Callback? = null
 
     override fun onAttach(context: Context) {
@@ -26,17 +31,22 @@ class RestrictionFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
-        _binding = FragmentRestrictionBinding.inflate(inflater, container, false)
-        return binding.root
+        val view = inflater.inflate(R.layout.fragment_restriction, container, false)
+        statusText = view.findViewById(R.id.status_text)
+        restrictionSwitch = view.findViewById(R.id.restriction_switch)
+        deviceOwnerWarning = view.findViewById(R.id.device_owner_warning)
+        changePinButton = view.findViewById(R.id.change_pin_button)
+        lockButton = view.findViewById(R.id.lock_button)
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.lockButton.setOnClickListener { callback?.onRequestLock() }
-        binding.changePinButton.setOnClickListener { callback?.onRequestChangePin() }
-        binding.restrictionSwitch.setOnCheckedChangeListener(switchListener)
+        changePinButton?.setOnClickListener { callback?.onRequestChangePin() }
+        lockButton?.setOnClickListener { callback?.onRequestLock() }
+        restrictionSwitch?.setOnCheckedChangeListener(switchListener)
     }
 
     override fun onResume() {
@@ -45,33 +55,38 @@ class RestrictionFragment : Fragment() {
     }
 
     private fun refreshState() {
-        val binding = _binding ?: return
         val activity = requireActivity() as MainActivity
         val isRestricted = activity.getPinStorage().isRestrictionEnabled()
         val isDeviceOwner = activity.getRestrictionManager().isDeviceOwner()
         setSwitchCheckedWithoutCallback(isRestricted)
-        binding.restrictionSwitch.isEnabled = isDeviceOwner
-        binding.deviceOwnerWarning.isVisible = !isDeviceOwner
+        restrictionSwitch?.isEnabled = isDeviceOwner
+        deviceOwnerWarning?.isVisible = !isDeviceOwner
         updateStatusText(isRestricted)
     }
 
     private fun setSwitchCheckedWithoutCallback(checked: Boolean) {
-        val binding = _binding ?: return
-        binding.restrictionSwitch.setOnCheckedChangeListener(null)
-        binding.restrictionSwitch.isChecked = checked
-        binding.restrictionSwitch.setOnCheckedChangeListener(switchListener)
+        val switchView = restrictionSwitch ?: return
+        switchView.setOnCheckedChangeListener(null)
+        switchView.isChecked = checked
+        switchView.setOnCheckedChangeListener(switchListener)
     }
 
     private fun updateStatusText(restricted: Boolean) {
-        _binding?.statusText?.setText(
-            if (restricted) R.string.restriction_status_on else R.string.restriction_status_off
+        statusText?.setText(
+            if (restricted) R.string.restriction_status_on else R.string.restriction_status_off,
         )
     }
 
     override fun onDestroyView() {
-        _binding?.restrictionSwitch?.setOnCheckedChangeListener(null)
+        restrictionSwitch?.setOnCheckedChangeListener(null)
+        changePinButton?.setOnClickListener(null)
+        lockButton?.setOnClickListener(null)
+        statusText = null
+        restrictionSwitch = null
+        deviceOwnerWarning = null
+        changePinButton = null
+        lockButton = null
         super.onDestroyView()
-        _binding = null
     }
 
     override fun onDetach() {
@@ -90,12 +105,12 @@ class RestrictionFragment : Fragment() {
     }
 
     private val switchListener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
-        val binding = _binding ?: return@OnCheckedChangeListener
         val applied = callback?.onRestrictionChanged(isChecked) ?: false
         if (applied) {
             updateStatusText(isChecked)
         } else {
-            Snackbar.make(binding.root, R.string.restrictions_error_generic, Snackbar.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.restrictions_error_generic, Toast.LENGTH_SHORT)
+                .show()
             setSwitchCheckedWithoutCallback(!isChecked)
         }
     }

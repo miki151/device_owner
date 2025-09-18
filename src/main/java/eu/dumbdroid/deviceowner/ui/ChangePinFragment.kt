@@ -5,15 +5,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import eu.dumbdroid.deviceowner.R
-import eu.dumbdroid.deviceowner.databinding.FragmentChangePinBinding
-import com.google.android.material.snackbar.Snackbar
 
 class ChangePinFragment : Fragment() {
 
-    private var _binding: FragmentChangePinBinding? = null
-    private val binding get() = _binding!!
+    private var currentPinInput: EditText? = null
+    private var newPinInput: EditText? = null
+    private var confirmPinInput: EditText? = null
+    private var updatePinButton: Button? = null
     private var callback: Callback? = null
 
     override fun onAttach(context: Context) {
@@ -24,60 +27,65 @@ class ChangePinFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
-        _binding = FragmentChangePinBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding.updatePinButton.setOnClickListener { handleUpdatePin() }
+        val view = inflater.inflate(R.layout.fragment_change_pin, container, false)
+        currentPinInput = view.findViewById(R.id.current_pin_input)
+        newPinInput = view.findViewById(R.id.new_pin_input)
+        confirmPinInput = view.findViewById(R.id.confirm_pin_input)
+        val button = view.findViewById<Button>(R.id.update_pin_button)
+        button!!.setOnClickListener { handleUpdatePin() }
+        updatePinButton = button
+        return view
     }
 
     override fun onResume() {
         super.onResume()
-        binding.currentPinInput.setText("")
-        binding.newPinInput.setText("")
-        binding.confirmPinInput.setText("")
-        binding.currentPinLayout.error = null
-        binding.newPinLayout.error = null
-        binding.confirmPinLayout.error = null
+        currentPinInput?.setText("")
+        newPinInput?.setText("")
+        confirmPinInput?.setText("")
+        currentPinInput?.error = null
+        newPinInput?.error = null
+        confirmPinInput?.error = null
     }
 
     private fun handleUpdatePin() {
-        val currentPin = binding.currentPinInput.text?.toString()?.trim() ?: ""
-        val newPin = binding.newPinInput.text?.toString()?.trim() ?: ""
-        val confirmPin = binding.confirmPinInput.text?.toString()?.trim() ?: ""
+        val currentPin = currentPinInput?.text?.toString()?.trim().orEmpty()
+        val newPin = newPinInput?.text?.toString()?.trim().orEmpty()
+        val confirmPin = confirmPinInput?.text?.toString()?.trim().orEmpty()
 
         val activity = requireActivity() as MainActivity
         val pinStorage = activity.getPinStorage()
 
-        binding.currentPinLayout.error = null
-        binding.newPinLayout.error = null
-        binding.confirmPinLayout.error = null
+        currentPinInput?.error = null
+        newPinInput?.error = null
+        confirmPinInput?.error = null
 
         when {
             !pinStorage.verifyPin(currentPin) -> {
-                binding.currentPinLayout.error = getString(R.string.pin_invalid)
+                currentPinInput?.error = getString(R.string.pin_invalid)
             }
             newPin.length < MIN_PIN_LENGTH -> {
-                binding.newPinLayout.error = getString(R.string.pin_too_short)
+                newPinInput?.error = getString(R.string.pin_too_short)
             }
             newPin != confirmPin -> {
-                binding.confirmPinLayout.error = getString(R.string.pin_mismatch)
+                confirmPinInput?.error = getString(R.string.pin_mismatch)
             }
             else -> {
                 pinStorage.savePin(newPin)
-                Snackbar.make(binding.root, R.string.pin_updated, Snackbar.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.pin_updated, Toast.LENGTH_SHORT).show()
                 callback?.onPinUpdated()
             }
         }
     }
 
     override fun onDestroyView() {
+        updatePinButton?.setOnClickListener(null)
+        currentPinInput = null
+        newPinInput = null
+        confirmPinInput = null
+        updatePinButton = null
         super.onDestroyView()
-        _binding = null
     }
 
     override fun onDetach() {
