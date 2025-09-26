@@ -1,18 +1,21 @@
 <resources>
     <string name="app_name">Device Owner Control</string>
     <string name="pin_setup_title">Set Up PIN</string>
-    <string name="pin_setup_instructions">Create a PIN to protect Play Store access.</string>
+    <string name="pin_setup_instructions">Create a PIN to protect parental controls. This is separate from device unlocking PIN.</string>
     <string name="pin_entry_title">Enter PIN</string>
-    <string name="pin_entry_description">Enter the administrator PIN to manage Play Store restrictions.</string>
+    <string name="pin_entry_description">Enter the administrator PIN to manage app restrictions.</string>
     <string name="pin_hint">PIN</string>
     <string name="confirm_pin_hint">Confirm PIN</string>
     <string name="continue_button">Continue</string>
     <string name="pin_mismatch">PIN codes do not match.</string>
     <string name="pin_too_short">PIN must be at least 4 digits.</string>
     <string name="incorrect_pin">Incorrect PIN. Try again.</string>
-    <string name="restriction_status_on">Play Store access is blocked.</string>
-    <string name="restriction_status_off">Play Store access is allowed.</string>
-    <string name="restriction_toggle_label">Block Play Store access</string>
+    <string name="restriction_status_on">App installation is blocked.</string>
+    <string name="restriction_status_off">App installation is allowed.</string>
+    <string name="restriction_toggle_label">Block Play Store and app installation</string>
+    <string name="app_restrictions_header">App access</string>
+    <string name="app_restrictions_description">Block or allow each installed app as needed.</string>
+    <string name="app_restrictions_empty">No launchable apps were found on this device.</string>
     <string name="status_device_owner_missing">This device must provision this app as the device owner to manage Play Store access.</string>
     <string name="blocked_message_title">Play Store blocked</string>
     <string name="blocked_message_body">The device owner has restricted Play Store access. Enter the administrator PIN in the Device Owner Control app to enable temporary access.</string>
@@ -25,7 +28,7 @@
     <string name="current_pin_hint">Current PIN</string>
     <string name="update_pin_button">Update PIN</string>
     <string name="pin_invalid">Invalid PIN.</string>
-    <string name="restrictions_error_generic">Unable to update the Play Store restriction. Check that this app is the device owner.</string>
+    <string name="restrictions_error_generic">Unable to update the restriction. Check that this app is the device owner.</string>
     <string name="device_owner_enabled">Device owner enabled.</string>
     <string name="device_owner_disabled">Device owner disabled.</string>
     <string name="device_owner_disable_warning">Disabling the device owner will remove Play Store protections.</string>

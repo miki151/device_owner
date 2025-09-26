@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	    package="eu.dumbdroid.deviceowner"
+            package="eu.dumbdroid.deviceowner"
     android:sharedUserId="android.uid.system"
     xmlns:tools="http://schemas.android.com/tools"
     coreApp="true">
+
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
 
     <application
@@ -19,11 +23,11 @@
         <activity
             android:name="eu.dumbdroid.deviceowner.ui.MainActivity"
             android:exported="true">
-            <intent-filter>
+	<!--            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+	</intent-filter>-->
         </activity>
 
         <activity

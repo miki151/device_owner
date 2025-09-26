@@ -10,7 +10,7 @@ This project provides a sample device owner (device policy controller) applicati
 - Provides a simple admin UI secured by a PIN:
   - First launch requests the administrator to configure a PIN.
   - Subsequent launches require the PIN before policy changes can be made.
-  - Administrators can toggle the Play Store restriction on or off and update the PIN.
+- Administrators can toggle the Play Store restriction, block or allow individual apps, and update the PIN.
 - Stores the PIN using salted SHA-256 hashing.
 
 ## Project structure

@@ -3,7 +3,7 @@ package eu.dumbdroid.deviceowner.ui
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import eu.dumbdroid.deviceowner.R
-import eu.dumbdroid.deviceowner.policy.PlayStoreRestrictionManager
+import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
 import eu.dumbdroid.deviceowner.storage.PinStorage
 
 class MainActivity : AppCompatActivity(),
@@ -13,14 +13,14 @@ class MainActivity : AppCompatActivity(),
     ChangePinFragment.Callback {
 
     private lateinit var pinStorage: PinStorage
-    private lateinit var restrictionManager: PlayStoreRestrictionManager
+    private lateinit var restrictionManager: DeviceRestrictionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         pinStorage = PinStorage(this)
-        restrictionManager = PlayStoreRestrictionManager(this)
+        restrictionManager = DeviceRestrictionManager(this)
 
         if (savedInstanceState == null) {
             showInitialScreen()
@@ -33,6 +33,16 @@ class MainActivity : AppCompatActivity(),
         } else {
             showPinEntry()
         }
+    }
+
+    override fun onStop() {
+	showPinEntry()
+        super.onStop()
+    }
+
+    override fun onPause() {
+	showPinEntry()
+        super.onPause()
     }
 
     private fun showSetupPin() {
@@ -73,6 +83,9 @@ class MainActivity : AppCompatActivity(),
         return applied
     }
 
+    override fun onAppRestrictionChanged(packageName: String, blocked: Boolean): Boolean =
+        restrictionManager.setApplicationBlocked(packageName, blocked)
+
     override fun onRequestChangePin() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, ChangePinFragment.newInstance())
@@ -85,5 +98,5 @@ class MainActivity : AppCompatActivity(),
     }
 
     fun getPinStorage(): PinStorage = pinStorage
-    fun getRestrictionManager(): PlayStoreRestrictionManager = restrictionManager
+    fun getRestrictionManager(): DeviceRestrictionManager = restrictionManager
 }

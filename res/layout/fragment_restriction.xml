@@ -10,18 +10,48 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/status_text"
+            android:id="@+id/play_store_status_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
             android:text="@string/restriction_status_off" />
 
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/restriction_switch"
+            android:id="@+id/play_store_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="@string/restriction_toggle_label" />
+
+        <TextView
+            android:id="@+id/app_list_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/app_restrictions_header"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title" />
+
+        <TextView
+            android:id="@+id/app_list_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/app_restrictions_description" />
+
+        <LinearLayout
+            android:id="@+id/app_list_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/app_list_empty_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/app_restrictions_empty"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/device_owner_warning"
@@ -38,13 +68,13 @@
             android:layout_marginTop="32dp"
             android:text="@string/change_pin_button" />
 
-        <Button
+	<!--        <Button
             android:id="@+id/lock_button"
             style="?attr/borderlessButtonStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/lock_button" />
+	android:text="@string/lock_button" />-->
 
     </LinearLayout>
 </ScrollView>
