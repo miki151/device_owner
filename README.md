@@ -5,7 +5,7 @@ This project provides a sample device owner (device policy controller) applicati
 ## Features
 
 - Provisionable as a **device owner** for full control of device policies.
-- Blocks manual launches of the Google Play Store by redirecting market intents to an informational screen.
+- Blocks manual launches of the Google Play Store by hiding the Play Store package and, as a fallback, redirecting market intents to an informational screen.
 - Allows background Play Store updates to continue to run so managed apps stay up to date.
 - Provides a simple admin UI secured by a PIN:
   - First launch requests the administrator to configure a PIN.
@@ -15,10 +15,10 @@ This project provides a sample device owner (device policy controller) applicati
 
 ## Project structure
 
-- `app/src/main/java/com/example/deviceowner/admin` – Device admin receiver implementation.
-- `app/src/main/java/com/example/deviceowner/policy` – Helper that applies or removes Play Store restrictions via the `DevicePolicyManager` API.
-- `app/src/main/java/com/example/deviceowner/storage` – PIN persistence helper.
-- `app/src/main/java/com/example/deviceowner/ui` – Activities and fragments for the user experience, including the blocking screen and admin console.
+- `src/main/java/eu/dumbdroid/deviceowner/admin` – Device admin receiver implementation.
+- `src/main/java/eu/dumbdroid/deviceowner/policy` – Helper that applies or removes Play Store restrictions by hiding packages with the `PackageManager` API.
+- `src/main/java/eu/dumbdroid/deviceowner/storage` – PIN persistence helper.
+- `src/main/java/eu/dumbdroid/deviceowner/ui` – Activities and fragments for the user experience, including the blocking screen and admin console.
 
 ## Building
 
@@ -43,6 +43,6 @@ When running locally for the first time, make sure your Gradle installation can 
 
 ## Notes
 
-- The Play Store is blocked by registering persistent preferred activities that redirect market intents to the `PlayStoreBlockedActivity`. Removing the restriction clears these overrides.
+- The Play Store is blocked by hiding the Play Store package so it cannot launch. The `PlayStoreBlockedActivity` remains available as a fallback handler for market intents.
 - Auto updates are unaffected because the Play Store application package is still installed and able to run background services.
 - The PIN is stored in shared preferences using salted SHA-256 hashes, preventing retrieval of the original PIN if the device is compromised.

@@ -1,7 +1,6 @@
 package eu.dumbdroid.deviceowner.admin
 
 import android.app.admin.DeviceAdminReceiver
-import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -30,10 +29,5 @@ class DeviceOwnerReceiver : DeviceAdminReceiver() {
     companion object {
         fun getComponentName(context: Context): ComponentName =
             ComponentName(context.applicationContext, DeviceOwnerReceiver::class.java)
-
-        fun getDevicePolicyManager(context: Context): DevicePolicyManager =
-            checkNotNull(context.getSystemService(DevicePolicyManager::class.java)) {
-                "DevicePolicyManager service is required"
-            }
     }
 }
