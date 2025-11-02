@@ -37,6 +37,11 @@ class PinEntryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        val hasPin = (requireActivity() as MainActivity).getPinStorage().isPinSet()
+        if (!hasPin) {
+            callback?.onPinVerified()
+            return
+        }
         pinInput?.setText("")
         pinInput?.error = null
     }

@@ -67,6 +67,9 @@ class RestrictionFragment : Fragment() {
         val restrictionManager = activity.getRestrictionManager()
         val isRestricted = pinStorage.isRestrictionEnabled()
         val isDeviceOwner = restrictionManager.isDeviceOwner()
+        changePinButton?.setText(
+            if (pinStorage.isPinSet()) R.string.change_pin_button else R.string.set_pin_button,
+        )
         setSwitchCheckedWithoutCallback(playStoreSwitch, isRestricted, playStoreSwitchListener)
         playStoreSwitch?.isEnabled = isDeviceOwner
         deviceOwnerWarning?.isVisible = !isDeviceOwner

@@ -45,6 +45,13 @@
             android:inputType="numberPassword"
             android:maxLength="12" />
 
+        <TextView
+            android:id="@+id/change_pin_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/pin_change_optional_hint" />
+
         <Button
             android:id="@+id/update_pin_button"
             android:layout_width="match_parent"

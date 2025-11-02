@@ -28,20 +28,24 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun showInitialScreen() {
-        if (!pinStorage.isPinSet()) {
+        if (!pinStorage.isSetupComplete()) {
             showSetupPin()
         } else {
-            showPinEntry()
+            showNextScreen()
         }
     }
 
     override fun onStop() {
-	showPinEntry()
+        if (pinStorage.isPinSet()) {
+            showPinEntry()
+        }
         super.onStop()
     }
 
     override fun onPause() {
-	showPinEntry()
+        if (pinStorage.isPinSet()) {
+            showPinEntry()
+        }
         super.onPause()
     }
 
@@ -52,6 +56,10 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun showPinEntry() {
+        if (!pinStorage.isPinSet()) {
+            showRestrictionScreen()
+            return
+        }
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, PinEntryFragment.newInstance())
             .commit()
@@ -64,7 +72,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onPinCreated() {
-        showPinEntry()
+        showNextScreen()
     }
 
     override fun onPinVerified() {
@@ -99,4 +107,12 @@ class MainActivity : AppCompatActivity(),
 
     fun getPinStorage(): PinStorage = pinStorage
     fun getRestrictionManager(): DeviceRestrictionManager = restrictionManager
+
+    private fun showNextScreen() {
+        if (pinStorage.isPinSet()) {
+            showPinEntry()
+        } else {
+            showRestrictionScreen()
+        }
+    }
 }

@@ -92,7 +92,11 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
             val packageName = appInfo.packageName
 	    if (!declaresLauncherActivity(packageName))
                 return@forEach
-            if (packageName == context.packageName || packageName == PLAY_STORE_PACKAGE) {
+            if (
+                packageName == context.packageName ||
+                packageName == PLAY_STORE_PACKAGE ||
+                packageName == SETTINGS_PACKAGE
+            ) {
                 return@forEach
             }
             if (!seenPackages.add(packageName)) {
@@ -193,5 +197,6 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
         private const val PREF_NAME = "device_owner_restrictions"
         private const val KEY_BLOCKED_APPS = "blocked_apps"
         private const val PLAY_STORE_PACKAGE = "com.android.vending"
+        private const val SETTINGS_PACKAGE = "com.android.settings"
     }
 }

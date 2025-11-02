@@ -22,6 +22,13 @@
             android:layout_marginTop="12dp"
             android:text="@string/pin_setup_instructions" />
 
+        <TextView
+            android:id="@+id/pin_optional_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/pin_optional_note" />
+
         <EditText
             android:id="@+id/pin_input"
             android:layout_width="match_parent"
@@ -42,6 +49,13 @@
             android:inputType="numberPassword"
             android:maxLength="12" />
 
+        <CheckBox
+            android:id="@+id/skip_pin_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/pin_skip_option" />
+
         <Button
             android:id="@+id/continue_button"
             android:layout_width="match_parent"
@@ -51,4 +65,3 @@
 
     </LinearLayout>
 </ScrollView>
-

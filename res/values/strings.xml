@@ -1,12 +1,14 @@
 <resources>
     <string name="app_name">Device Owner Control</string>
     <string name="pin_setup_title">Set Up PIN</string>
-    <string name="pin_setup_instructions">Create a PIN to protect parental controls. This is separate from device unlocking PIN.</string>
+    <string name="pin_setup_instructions">Create a PIN to protect parental controls. This is separate from the device unlock PIN.</string>
+    <string name="pin_optional_note">You can skip the PIN, but anyone with device access will be able to change restrictions.</string>
     <string name="pin_entry_title">Enter PIN</string>
     <string name="pin_entry_description">Enter the administrator PIN to manage app restrictions.</string>
     <string name="pin_hint">PIN</string>
     <string name="confirm_pin_hint">Confirm PIN</string>
     <string name="continue_button">Continue</string>
+    <string name="pin_skip_option">Continue without a PIN</string>
     <string name="pin_mismatch">PIN codes do not match.</string>
     <string name="pin_too_short">PIN must be at least 4 digits.</string>
     <string name="incorrect_pin">Incorrect PIN. Try again.</string>
@@ -21,8 +23,11 @@
     <string name="blocked_message_body">The device owner has restricted Play Store access. Enter the administrator PIN in the Device Owner Control app to enable temporary access.</string>
     <string name="lock_button">Lock</string>
     <string name="change_pin_button">Change PIN</string>
+    <string name="set_pin_button">Set PIN</string>
     <string name="pin_saved">PIN saved.</string>
     <string name="pin_updated">PIN updated.</string>
+    <string name="pin_removed">PIN no longer required.</string>
+    <string name="pin_change_optional_hint">Leave the new PIN empty to remove the PIN requirement.</string>
     <string name="enter_new_pin_title">Set a new PIN</string>
     <string name="confirm_pin_label">Confirm PIN</string>
     <string name="current_pin_hint">Current PIN</string>

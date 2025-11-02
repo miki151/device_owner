@@ -47,6 +47,7 @@ class ChangePinFragment : Fragment() {
         currentPinInput?.error = null
         newPinInput?.error = null
         confirmPinInput?.error = null
+        updateCurrentPinVisibility()
     }
 
     private fun handleUpdatePin() {
@@ -56,16 +57,17 @@ class ChangePinFragment : Fragment() {
 
         val activity = requireActivity() as MainActivity
         val pinStorage = activity.getPinStorage()
+        val hasExistingPin = pinStorage.isPinSet()
 
         currentPinInput?.error = null
         newPinInput?.error = null
         confirmPinInput?.error = null
 
         when {
-            !pinStorage.verifyPin(currentPin) -> {
+            hasExistingPin && !pinStorage.verifyPin(currentPin) -> {
                 currentPinInput?.error = getString(R.string.pin_invalid)
             }
-            newPin.length < MIN_PIN_LENGTH -> {
+            newPin.isNotEmpty() && newPin.length < MIN_PIN_LENGTH -> {
                 newPinInput?.error = getString(R.string.pin_too_short)
             }
             newPin != confirmPin -> {
@@ -73,7 +75,12 @@ class ChangePinFragment : Fragment() {
             }
             else -> {
                 pinStorage.savePin(newPin)
-                Toast.makeText(requireContext(), R.string.pin_updated, Toast.LENGTH_SHORT).show()
+                val message = if (newPin.isEmpty()) {
+                    R.string.pin_removed
+                } else {
+                    R.string.pin_updated
+                }
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                 callback?.onPinUpdated()
             }
         }
@@ -91,6 +98,12 @@ class ChangePinFragment : Fragment() {
     override fun onDetach() {
         super.onDetach()
         callback = null
+    }
+
+    private fun updateCurrentPinVisibility() {
+        val activity = activity as? MainActivity ?: return
+        val hasPin = activity.getPinStorage().isPinSet()
+        currentPinInput?.visibility = if (hasPin) View.VISIBLE else View.GONE
     }
 
     interface Callback {
