@@ -9,13 +9,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/play_store_status_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.AppCompat.Title"
-            android:text="@string/restriction_status_off" />
-
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/play_store_switch"
             android:layout_width="wrap_content"
@@ -28,15 +21,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:text="@string/app_restrictions_header"
+            android:text="@string/blocked_apps_header"
             android:textAppearance="@style/TextAppearance.AppCompat.Title" />
-
-        <TextView
-            android:id="@+id/app_list_description"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/app_restrictions_description" />
 
         <LinearLayout
             android:id="@+id/app_list_container"
@@ -50,8 +36,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/app_restrictions_empty"
+            android:text="@string/blocked_apps_empty"
             android:visibility="gone" />
+
+        <Button
+            android:id="@+id/manage_apps_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/manage_apps_button" />
 
         <TextView
             android:id="@+id/device_owner_warning"
@@ -78,4 +71,3 @@
 
     </LinearLayout>
 </ScrollView>
-
