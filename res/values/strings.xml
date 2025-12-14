@@ -21,6 +21,8 @@
     <string name="blocked_apps_header">Blocked apps</string>
     <string name="blocked_apps_description">Only blocked apps are listed here. Use Add or remove to change the list.</string>
     <string name="blocked_apps_empty">No apps are currently blocked.</string>
+    <string name="play_store_block_label">Play Store and app installation</string>
+    <string name="play_store_change_label">Play Store and app installation (%1$s)</string>
     <string name="manage_apps_button">Add or remove</string>
     <string name="status_device_owner_missing">This device must provision this app as the device owner to manage Play Store access.</string>
     <string name="blocked_message_title">Play Store blocked</string>

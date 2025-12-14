@@ -83,17 +83,6 @@ class MainActivity : AppCompatActivity(),
         showPinEntry()
     }
 
-    override fun onRestrictionChanged(enabled: Boolean): Boolean {
-        val applied = restrictionManager.setPlayStoreRestricted(enabled)
-        if (applied) {
-            pinStorage.setRestrictionEnabled(enabled)
-        }
-        return applied
-    }
-
-    override fun onAppRestrictionChanged(packageName: String, blocked: Boolean): Boolean =
-        restrictionManager.setApplicationBlocked(packageName, blocked)
-
     override fun onRequestChangePin() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, ChangePinFragment.newInstance())

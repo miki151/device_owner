@@ -196,7 +196,7 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
     companion object {
         private const val PREF_NAME = "device_owner_restrictions"
         private const val KEY_BLOCKED_APPS = "blocked_apps"
-        private const val PLAY_STORE_PACKAGE = "com.android.vending"
+        const val PLAY_STORE_PACKAGE = "com.android.vending"
         private const val SETTINGS_PACKAGE = "com.android.settings"
     }
 }

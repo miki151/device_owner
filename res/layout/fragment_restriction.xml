@@ -9,18 +9,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/play_store_switch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/restriction_toggle_label" />
-
         <TextView
             android:id="@+id/app_list_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="8dp"
             android:text="@string/blocked_apps_header"
             android:textAppearance="@style/TextAppearance.AppCompat.Title" />
 
