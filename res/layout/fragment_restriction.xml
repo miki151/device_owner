@@ -40,6 +40,36 @@
             android:text="@string/manage_apps_button" />
 
         <TextView
+            android:id="@+id/permanent_app_list_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/permanently_blocked_apps_header"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title" />
+
+        <LinearLayout
+            android:id="@+id/permanent_app_list_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/permanent_app_list_empty_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/permanently_blocked_apps_empty"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/permanently_block_apps_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/permanently_block_apps_button" />
+
+        <TextView
             android:id="@+id/device_owner_warning"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

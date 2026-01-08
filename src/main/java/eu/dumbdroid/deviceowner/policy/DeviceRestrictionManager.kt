@@ -41,9 +41,29 @@ class DeviceRestrictionManager(private val context: Context) {
         if (packageName == context.packageName) {
             return false
         }
+        if (!blocked && isApplicationPermanentlyBlocked(packageName)) {
+            return false
+        }
         val success = setApplicationHidden(packageName, blocked)
         if (success) {
-            updateBlockedApplications(packageName, blocked)
+            if (!isApplicationPermanentlyBlocked(packageName)) {
+                updateBlockedApplications(packageName, blocked)
+            }
+        }
+        return success
+    }
+
+    fun setApplicationPermanentlyBlocked(packageName: String): Boolean {
+        if (!canModifyHiddenState()) {
+            return false
+        }
+        if (packageName == context.packageName || packageName == PLAY_STORE_PACKAGE) {
+            return false
+        }
+        val success = setApplicationHidden(packageName, true)
+        if (success) {
+            addPermanentlyBlockedApplication(packageName)
+            removeSoftBlockedApplication(packageName)
         }
         return success
     }
@@ -65,6 +85,10 @@ class DeviceRestrictionManager(private val context: Context) {
         } catch (exception: Exception) {
             getStoredBlockedApplications().contains(packageName)
         }
+    }
+
+    fun isApplicationPermanentlyBlocked(packageName: String): Boolean {
+        return getStoredPermanentlyBlockedApplications().contains(packageName)
     }
 
 private fun declaresLauncherActivity(pkg: String): Boolean {
@@ -137,17 +161,47 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
     }
 
     private fun updateBlockedApplications(packageName: String, blocked: Boolean) {
-        val blockedApps = getStoredBlockedApplications()
+        val blockedApps = getStoredSoftBlockedApplications()
         if (blocked) {
             blockedApps.add(packageName)
-        } else {
+        } else if (!isApplicationPermanentlyBlocked(packageName)) {
             blockedApps.remove(packageName)
         }
         preferences.edit().putStringSet(KEY_BLOCKED_APPS, blockedApps).apply()
     }
 
+    private fun addPermanentlyBlockedApplication(packageName: String) {
+        val blockedApps = getStoredPermanentlyBlockedApplications()
+        blockedApps.add(packageName)
+        preferences.edit().putStringSet(KEY_PERMANENTLY_BLOCKED_APPS, blockedApps).apply()
+    }
+
+    private fun removeSoftBlockedApplication(packageName: String) {
+        val blockedApps = getStoredSoftBlockedApplications()
+        if (blockedApps.remove(packageName)) {
+            preferences.edit().putStringSet(KEY_BLOCKED_APPS, blockedApps).apply()
+        }
+    }
+
     private fun getStoredBlockedApplications(): MutableSet<String> {
+        val blocked = getStoredSoftBlockedApplications()
+        blocked.addAll(getStoredPermanentlyBlockedApplications())
+        return blocked
+    }
+
+    private fun getStoredSoftBlockedApplications(): MutableSet<String> {
         val stored = preferences.getStringSet(KEY_BLOCKED_APPS, emptySet())
+        return stored?.toMutableSet() ?: mutableSetOf()
+    }
+
+    fun getPermanentlyBlockedApplications(): Set<String> {
+        return getStoredPermanentlyBlockedApplications()
+            .filterNot { it == PLAY_STORE_PACKAGE }
+            .toSet()
+    }
+
+    private fun getStoredPermanentlyBlockedApplications(): MutableSet<String> {
+        val stored = preferences.getStringSet(KEY_PERMANENTLY_BLOCKED_APPS, emptySet())
         return stored?.toMutableSet() ?: mutableSetOf()
     }
 
@@ -196,6 +250,7 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
     companion object {
         private const val PREF_NAME = "device_owner_restrictions"
         private const val KEY_BLOCKED_APPS = "blocked_apps"
+        private const val KEY_PERMANENTLY_BLOCKED_APPS = "permanently_blocked_apps"
         const val PLAY_STORE_PACKAGE = "com.android.vending"
         private const val SETTINGS_PACKAGE = "com.android.settings"
     }
