@@ -3,7 +3,7 @@
     <string name="top_level_settings_title">App Blocker</string>
     <string name="top_level_settings_summary">Block apps and Play Store access</string>
     <string name="pin_setup_title">Set Up PIN</string>
-    <string name="pin_setup_instructions">Create a PIN to protect parental controls. This is separate from the device unlock PIN.</string>
+    <string name="pin_setup_instructions">Create a PIN to protect App Blocker. This is separate from the device unlock PIN.</string>
     <string name="pin_optional_note">You can skip the PIN, but anyone with device access will be able to change restrictions.</string>
     <string name="pin_entry_title">Enter PIN</string>
     <string name="pin_entry_description">Enter the administrator PIN to manage app restrictions.</string>
