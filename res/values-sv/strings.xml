@@ -1,0 +1,98 @@
+<resources>
+    <string name="app_name">Device Owner Control</string>
+    <string name="top_level_settings_title">Appblockerare</string>
+    <string name="top_level_settings_summary">Blockera appar och åtkomst till Play Butik</string>
+
+    <string name="pin_setup_title">Konfigurera PIN-kod</string>
+    <string name="pin_setup_instructions">Skapa en PIN-kod för att skydda Appblockeraren. Detta är separat från enhetens upplåsningskod.</string>
+    <string name="pin_optional_note">Du kan hoppa över PIN-koden, men alla med tillgång till enheten kommer då kunna ändra begränsningarna.</string>
+
+    <string name="pin_entry_title">Ange PIN-kod</string>
+    <string name="pin_entry_description">Ange administratörens PIN-kod för att hantera appbegränsningar.</string>
+    <string name="pin_hint">PIN-kod</string>
+    <string name="confirm_pin_hint">Bekräfta PIN-kod</string>
+
+    <string name="continue_button">Fortsätt</string>
+    <string name="pin_skip_option">Fortsätt utan PIN-kod</string>
+
+    <string name="pin_mismatch">PIN-koderna matchar inte.</string>
+    <string name="pin_too_short">PIN-koden måste bestå av minst 4 siffror.</string>
+    <string name="incorrect_pin">Felaktig PIN-kod. Försök igen.</string>
+
+    <string name="restriction_status_on">Appinstallation är blockerad.</string>
+    <string name="restriction_status_off">Appinstallation är tillåten.</string>
+    <string name="restriction_toggle_label">Blockera Play Butik och appinstallation</string>
+
+    <string name="app_restrictions_header">Appåtkomst</string>
+    <string name="app_restrictions_description">Blockera eller tillåt varje installerad app efter behov.</string>
+    <string name="app_restrictions_empty">Inga startbara appar hittades på den här enheten.</string>
+
+    <string name="blocked_apps_header">Blockerade appar</string>
+    <string name="blocked_apps_description">Endast blockerade appar visas här. Använd Lägg till eller ta bort för att ändra listan.</string>
+    <string name="blocked_apps_empty">Inga appar är för närvarande blockerade.</string>
+
+    <string name="permanently_blocked_apps_header">Permanent blockerade appar</string>
+    <string name="permanently_blocked_apps_empty">Inga appar är permanent blockerade.</string>
+
+    <string name="play_store_block_label">Play Butik och appinstallation</string>
+    <string name="play_store_change_label">Play Butik och appinstallation (%1$s)</string>
+
+    <string name="manage_apps_button">Lägg till eller ta bort</string>
+    <string name="permanently_block_apps_button">Blockera appar permanent</string>
+
+    <string name="status_device_owner_missing">Den här enheten måste konfigurera denna app som enhetsadministratör för att hantera åtkomst till Play Butik.</string>
+
+    <string name="blocked_message_title">Play Butik blockerad</string>
+    <string name="blocked_message_body">Enhetsadministratören har begränsat åtkomsten till Play Butik. Ange administratörens PIN-kod i appen Device Owner Control för att tillfälligt aktivera åtkomst.</string>
+
+    <string name="lock_button">Lås</string>
+
+    <string name="change_pin_button">Ändra PIN-kod</string>
+    <string name="set_pin_button">Ange PIN-kod</string>
+
+    <string name="pin_saved">PIN-kod sparad.</string>
+    <string name="pin_updated">PIN-kod uppdaterad.</string>
+    <string name="pin_removed">PIN-kod krävs inte längre.</string>
+
+    <string name="pin_change_optional_hint">Lämna den nya PIN-koden tom för att ta bort kravet på PIN-kod.</string>
+
+    <string name="enter_new_pin_title">Ange en ny PIN-kod</string>
+    <string name="confirm_pin_label">Bekräfta PIN-kod</string>
+    <string name="current_pin_hint">Nuvarande PIN-kod</string>
+
+    <string name="update_pin_button">Uppdatera PIN-kod</string>
+
+    <string name="pin_invalid">Ogiltig PIN-kod.</string>
+
+    <string name="restrictions_error_generic">Det gick inte att uppdatera begränsningen. Kontrollera att denna app är enhetsadministratör.</string>
+
+    <string name="device_owner_enabled">Enhetsadministratör aktiverad.</string>
+    <string name="device_owner_disabled">Enhetsadministratör inaktiverad.</string>
+
+    <string name="device_owner_disable_warning">Om enhetsadministratören inaktiveras tas skyddet för Play Butik bort.</string>
+
+    <string name="app_selection_header">Hantera appar</string>
+    <string name="app_selection_description">Välj vilka appar som ska blockeras. Ändringarna tillämpas efter att du bekräftat.</string>
+
+    <string name="permanent_app_selection_header">Blockera appar permanent</string>
+    <string name="permanent_app_selection_description">Välj appar som ska blockeras permanent. Dessa appar kan inte avblockeras utan en fabriksåterställning.</string>
+
+    <string name="confirm_changes_button">Bekräfta</string>
+    <string name="cancel_changes_button">Avbryt</string>
+
+    <string name="confirm_changes_title">Bekräfta ändringar</string>
+    <string name="confirm_changes_block">Blockera:\n%1$s</string>
+    <string name="confirm_changes_unblock">Avblockera:\n%1$s</string>
+
+    <string name="confirm_permanent_changes_title">Bekräfta permanenta blockeringar</string>
+    <string name="confirm_permanent_changes_block">Blockera permanent:\n%1$s</string>
+
+    <string name="confirm_changes_positive">Bekräfta</string>
+    <string name="confirm_changes_negative">Avbryt</string>
+
+    <string name="no_changes_to_apply">Inga ändringar att tillämpa.</string>
+
+    <string name="app_changes_failed">Vissa ändringar kunde inte tillämpas.</string>
+    <string name="app_changes_applied">Appbegränsningar uppdaterade.</string>
+    <string name="permanent_app_changes_applied">Permanenta appblockeringar uppdaterade.</string>
+</resources>
