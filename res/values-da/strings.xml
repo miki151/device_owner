@@ -18,7 +18,6 @@
     <string name="restriction_status_off">Installation af apps er tilladt.</string>
     <string name="restriction_toggle_label">Bloker Play Butik og app-installation</string>
     <string name="app_restrictions_header">App-adgang</string>
-    <string name="app_restrictions_description">Bloker eller tillad hver installeret app individuelt.</string>
     <string name="app_restrictions_empty">Ingen apps, der kan startes, blev fundet på denne enhed.</string>
     <string name="blocked_apps_header">Blokerede apps</string>
     <string name="blocked_apps_description">Kun blokerede apps vises her. Brug Tilføj eller fjern for at ændre listen.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Nogle ændringer kunne ikke anvendes.</string>
     <string name="app_changes_applied">App-begrænsninger opdateret.</string>
     <string name="permanent_app_changes_applied">Permanente app-blokeringer opdateret.</string>
+    <string name="confirm_permanent_block_title">Bloker app permanent?</string>
+    <string name="confirm_permanent_block_message">Bloker %1$s permanent? Dette kan kun fortrydes med en fabriksnulstilling.</string>
+    <string name="confirm_permanent_block_positive">Bloker permanent</string>
+    <string name="app_temporarily_blocked">%1$s er blokeret.</string>
+    <string name="app_unblocked">%1$s er ikke længere blokeret.</string>
+    <string name="app_permanently_blocked">%1$s er blokeret permanent.</string>
 </resources>

@@ -5,4 +5,7 @@
     <color name="md_theme_light_onBackground">#1C1B1F</color>
     <color name="md_theme_light_surface">#FFFBFE</color>
     <color name="md_theme_light_onSurface">#1C1B1F</color>
+    <color name="blocked_lock_icon">#9B6DFF</color>
+    <color name="permanent_block_icon">#B3261E</color>
+    <color name="app_list_divider">#1F1C1B1F</color>
 </resources>

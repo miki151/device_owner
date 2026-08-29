@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Process
 import android.os.UserManager
@@ -133,6 +134,43 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
         return apps
     }
 
+    fun getInstalledApplication(packageName: String): ManagedApp? {
+        return try {
+            val applicationInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getApplicationInfo(
+                    packageName,
+                    PackageManager.ApplicationInfoFlags.of(INSTALLED_APPLICATION_FLAGS.toLong()),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getApplicationInfo(packageName, INSTALLED_APPLICATION_FLAGS)
+            }
+            ManagedApp(
+                packageName = applicationInfo.packageName,
+                label = packageManager.getApplicationLabel(applicationInfo).toString(),
+            )
+        } catch (_: PackageManager.NameNotFoundException) {
+            null
+        }
+    }
+
+    fun getApplicationIcon(packageName: String): Drawable {
+        return try {
+            val applicationInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getApplicationInfo(
+                    packageName,
+                    PackageManager.ApplicationInfoFlags.of(INSTALLED_APPLICATION_FLAGS.toLong()),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getApplicationInfo(packageName, INSTALLED_APPLICATION_FLAGS)
+            }
+            applicationInfo.loadIcon(packageManager)
+        } catch (_: PackageManager.NameNotFoundException) {
+            packageManager.defaultActivityIcon
+        }
+    }
+
     private fun setUnknownSourcesRestriction(enabled: Boolean) {
         val manager = userManager ?: return
         try {
@@ -248,6 +286,8 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
     }
 
     companion object {
+        private const val INSTALLED_APPLICATION_FLAGS =
+            PackageManager.MATCH_UNINSTALLED_PACKAGES or PackageManager.MATCH_DISABLED_COMPONENTS
         private const val PREF_NAME = "device_owner_restrictions"
         private const val KEY_BLOCKED_APPS = "blocked_apps"
         private const val KEY_PERMANENTLY_BLOCKED_APPS = "permanently_blocked_apps"

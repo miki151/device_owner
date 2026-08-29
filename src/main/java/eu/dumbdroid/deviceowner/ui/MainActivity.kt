@@ -7,7 +7,6 @@ import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
 import eu.dumbdroid.deviceowner.storage.PinStorage
 
 class MainActivity : AppCompatActivity(),
-    SetupPinFragment.Callback,
     PinEntryFragment.Callback,
     RestrictionFragment.Callback,
     ChangePinFragment.Callback {
@@ -23,14 +22,6 @@ class MainActivity : AppCompatActivity(),
         restrictionManager = DeviceRestrictionManager(this)
 
         if (savedInstanceState == null) {
-            showInitialScreen()
-        }
-    }
-
-    private fun showInitialScreen() {
-        if (!pinStorage.isSetupComplete()) {
-            showSetupPin()
-        } else {
             showNextScreen()
         }
     }
@@ -49,12 +40,6 @@ class MainActivity : AppCompatActivity(),
         super.onPause()
     }
 
-    private fun showSetupPin() {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.content_container, SetupPinFragment.newInstance())
-            .commit()
-    }
-
     private fun showPinEntry() {
         if (!pinStorage.isPinSet()) {
             showRestrictionScreen()
@@ -69,10 +54,6 @@ class MainActivity : AppCompatActivity(),
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, RestrictionFragment.newInstance())
             .commit()
-    }
-
-    override fun onPinCreated() {
-        showNextScreen()
     }
 
     override fun onPinVerified() {

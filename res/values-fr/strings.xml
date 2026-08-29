@@ -18,7 +18,6 @@
     <string name="restriction_status_off">L’installation d’applications est autorisée.</string>
     <string name="restriction_toggle_label">Bloquer le Play Store et l’installation d’applications</string>
     <string name="app_restrictions_header">Accès aux applications</string>
-    <string name="app_restrictions_description">Bloquez ou autorisez chaque application installée selon vos besoins.</string>
     <string name="app_restrictions_empty">Aucune application lançable n’a été trouvée sur cet appareil.</string>
     <string name="blocked_apps_header">Applications bloquées</string>
     <string name="blocked_apps_description">Seules les applications bloquées sont listées ici. Utilisez Ajouter ou supprimer pour modifier la liste.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Certaines modifications n’ont pas pu être appliquées.</string>
     <string name="app_changes_applied">Restrictions des applications mises à jour.</string>
     <string name="permanent_app_changes_applied">Blocages permanents des applications mis à jour.</string>
+    <string name="confirm_permanent_block_title">Bloquer définitivement l’application ?</string>
+    <string name="confirm_permanent_block_message">Bloquer définitivement %1$s ? Cette action ne peut être annulée qu’avec une réinitialisation d’usine.</string>
+    <string name="confirm_permanent_block_positive">Bloquer définitivement</string>
+    <string name="app_temporarily_blocked">%1$s a été bloquée.</string>
+    <string name="app_unblocked">%1$s a été débloquée.</string>
+    <string name="app_permanently_blocked">%1$s a été bloquée définitivement.</string>
 </resources>

@@ -18,7 +18,6 @@
     <string name="restriction_status_off">App-installatie is toegestaan.</string>
     <string name="restriction_toggle_label">Blokkeer Play Store en app-installatie</string>
     <string name="app_restrictions_header">App-toegang</string>
-    <string name="app_restrictions_description">Blokkeer of sta elke geïnstalleerde app afzonderlijk toe.</string>
     <string name="app_restrictions_empty">Geen startbare apps gevonden op dit apparaat.</string>
     <string name="blocked_apps_header">Geblokkeerde apps</string>
     <string name="blocked_apps_description">Alleen geblokkeerde apps worden hier weergegeven. Gebruik Toevoegen of verwijderen om de lijst te wijzigen.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Sommige wijzigingen konden niet worden toegepast.</string>
     <string name="app_changes_applied">App-beperkingen bijgewerkt.</string>
     <string name="permanent_app_changes_applied">Permanente app-blokkeringen bijgewerkt.</string>
+    <string name="confirm_permanent_block_title">App permanent blokkeren?</string>
+    <string name="confirm_permanent_block_message">%1$s permanent blokkeren? Dit kan alleen ongedaan worden gemaakt met een fabrieksreset.</string>
+    <string name="confirm_permanent_block_positive">Permanent blokkeren</string>
+    <string name="app_temporarily_blocked">%1$s is geblokkeerd.</string>
+    <string name="app_unblocked">%1$s is gedeblokkeerd.</string>
+    <string name="app_permanently_blocked">%1$s is permanent geblokkeerd.</string>
 </resources>

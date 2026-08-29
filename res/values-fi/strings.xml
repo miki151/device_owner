@@ -18,7 +18,6 @@
     <string name="restriction_status_off">Sovellusten asennus on sallittu.</string>
     <string name="restriction_toggle_label">Estä Play Kauppa ja sovellusten asennus</string>
     <string name="app_restrictions_header">Sovellusten käyttö</string>
-    <string name="app_restrictions_description">Estä tai salli jokainen asennettu sovellus tarpeen mukaan.</string>
     <string name="app_restrictions_empty">Tältä laitteelta ei löytynyt käynnistettäviä sovelluksia.</string>
     <string name="blocked_apps_header">Estetyt sovellukset</string>
     <string name="blocked_apps_description">Vain estetyt sovellukset näkyvät tässä. Käytä Lisää tai poista muuttaaksesi listaa.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Joidenkin muutosten käyttöönotto epäonnistui.</string>
     <string name="app_changes_applied">Sovellusrajoitukset päivitetty.</string>
     <string name="permanent_app_changes_applied">Pysyvät sovellusestot päivitetty.</string>
+    <string name="confirm_permanent_block_title">Estetäänkö sovellus pysyvästi?</string>
+    <string name="confirm_permanent_block_message">Estetäänkö %1$s pysyvästi? Tämän voi kumota vain palauttamalla tehdasasetukset.</string>
+    <string name="confirm_permanent_block_positive">Estä pysyvästi</string>
+    <string name="app_temporarily_blocked">Sovellus %1$s estettiin.</string>
+    <string name="app_unblocked">Sovelluksen %1$s esto poistettiin.</string>
+    <string name="app_permanently_blocked">Sovellus %1$s estettiin pysyvästi.</string>
 </resources>

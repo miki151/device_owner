@@ -18,7 +18,6 @@
     <string name="restriction_status_off">Instalowanie aplikacji jest dozwolone.</string>
     <string name="restriction_toggle_label">Zablokuj Sklep Play i instalowanie aplikacji</string>
     <string name="app_restrictions_header">Dostęp do aplikacji</string>
-    <string name="app_restrictions_description">Blokuj lub zezwalaj na dostęp do każdej zainstalowanej aplikacji według potrzeb.</string>
     <string name="app_restrictions_empty">Na tym urządzeniu nie znaleziono aplikacji możliwych do uruchomienia.</string>
     <string name="blocked_apps_header">Zablokowane aplikacje</string>
     <string name="blocked_apps_description">Wyświetlane są tutaj tylko zablokowane aplikacje. Użyj opcji Dodaj lub usuń, aby zmienić listę.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Niektórych zmian nie udało się zastosować.</string>
     <string name="app_changes_applied">Ograniczenia aplikacji zostały zaktualizowane.</string>
     <string name="permanent_app_changes_applied">Trwałe blokady aplikacji zostały zaktualizowane.</string>
+    <string name="confirm_permanent_block_title">Trwale zablokować aplikację?</string>
+    <string name="confirm_permanent_block_message">Trwale zablokować aplikację %1$s? Można to cofnąć tylko przez przywrócenie ustawień fabrycznych.</string>
+    <string name="confirm_permanent_block_positive">Zablokuj trwale</string>
+    <string name="app_temporarily_blocked">Zablokowano aplikację %1$s.</string>
+    <string name="app_unblocked">Odblokowano aplikację %1$s.</string>
+    <string name="app_permanently_blocked">Trwale zablokowano aplikację %1$s.</string>
 </resources>

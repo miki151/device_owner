@@ -18,7 +18,6 @@
     <string name="restriction_status_off">Nameščanje aplikacij je dovoljeno.</string>
     <string name="restriction_toggle_label">Blokiraj Trgovino Play in nameščanje aplikacij</string>
     <string name="app_restrictions_header">Dostop do aplikacij</string>
-    <string name="app_restrictions_description">Po potrebi blokirajte ali dovolite posamezne nameščene aplikacije.</string>
     <string name="app_restrictions_empty">Na tej napravi ni bilo najdenih aplikacij za zagon.</string>
     <string name="blocked_apps_header">Blokirane aplikacije</string>
     <string name="blocked_apps_description">Tukaj so prikazane samo blokirane aplikacije. Uporabite Dodaj ali odstrani za spremembo seznama.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Nekaterih sprememb ni bilo mogoče uveljaviti.</string>
     <string name="app_changes_applied">Omejitve aplikacij posodobljene.</string>
     <string name="permanent_app_changes_applied">Trajne blokade aplikacij posodobljene.</string>
+    <string name="confirm_permanent_block_title">Trajno blokiram aplikacijo?</string>
+    <string name="confirm_permanent_block_message">Trajno blokiram aplikacijo %1$s? To je mogoče razveljaviti samo s ponastavitvijo na tovarniške nastavitve.</string>
+    <string name="confirm_permanent_block_positive">Trajno blokiraj</string>
+    <string name="app_temporarily_blocked">Aplikacija %1$s je blokirana.</string>
+    <string name="app_unblocked">Aplikacija %1$s je odblokirana.</string>
+    <string name="app_permanently_blocked">Aplikacija %1$s je trajno blokirana.</string>
 </resources>

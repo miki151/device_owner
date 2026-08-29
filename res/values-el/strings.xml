@@ -18,7 +18,6 @@
     <string name="restriction_status_off">Η εγκατάσταση εφαρμογών επιτρέπεται.</string>
     <string name="restriction_toggle_label">Αποκλεισμός Play Store και εγκατάστασης εφαρμογών</string>
     <string name="app_restrictions_header">Πρόσβαση εφαρμογών</string>
-    <string name="app_restrictions_description">Αποκλείστε ή επιτρέψτε κάθε εγκατεστημένη εφαρμογή όπως απαιτείται.</string>
     <string name="app_restrictions_empty">Δεν βρέθηκαν εφαρμογές με δυνατότητα εκκίνησης σε αυτή τη συσκευή.</string>
     <string name="blocked_apps_header">Αποκλεισμένες εφαρμογές</string>
     <string name="blocked_apps_description">Μόνο οι αποκλεισμένες εφαρμογές εμφανίζονται εδώ. Χρησιμοποιήστε το Προσθήκη ή αφαίρεση για να αλλάξετε τη λίστα.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Ορισμένες αλλαγές δεν ήταν δυνατό να εφαρμοστούν.</string>
     <string name="app_changes_applied">Οι περιορισμοί εφαρμογών ενημερώθηκαν.</string>
     <string name="permanent_app_changes_applied">Οι μόνιμοι αποκλεισμοί εφαρμογών ενημερώθηκαν.</string>
+    <string name="confirm_permanent_block_title">Μόνιμος αποκλεισμός εφαρμογής;</string>
+    <string name="confirm_permanent_block_message">Να αποκλειστεί μόνιμα η εφαρμογή %1$s; Αυτό μπορεί να αναιρεθεί μόνο με επαναφορά εργοστασιακών ρυθμίσεων.</string>
+    <string name="confirm_permanent_block_positive">Μόνιμος αποκλεισμός</string>
+    <string name="app_temporarily_blocked">Η εφαρμογή %1$s αποκλείστηκε.</string>
+    <string name="app_unblocked">Η εφαρμογή %1$s ξεμπλοκαρίστηκε.</string>
+    <string name="app_permanently_blocked">Η εφαρμογή %1$s αποκλείστηκε μόνιμα.</string>
 </resources>

@@ -24,7 +24,6 @@
     <string name="restriction_toggle_label">Blockera Play Butik och appinstallation</string>
 
     <string name="app_restrictions_header">Appåtkomst</string>
-    <string name="app_restrictions_description">Blockera eller tillåt varje installerad app efter behov.</string>
     <string name="app_restrictions_empty">Inga startbara appar hittades på den här enheten.</string>
 
     <string name="blocked_apps_header">Blockerade appar</string>
@@ -95,4 +94,10 @@
     <string name="app_changes_failed">Vissa ändringar kunde inte tillämpas.</string>
     <string name="app_changes_applied">Appbegränsningar uppdaterade.</string>
     <string name="permanent_app_changes_applied">Permanenta appblockeringar uppdaterade.</string>
+    <string name="confirm_permanent_block_title">Blockera appen permanent?</string>
+    <string name="confirm_permanent_block_message">Blockera %1$s permanent? Detta kan endast ångras med en fabriksåterställning.</string>
+    <string name="confirm_permanent_block_positive">Blockera permanent</string>
+    <string name="app_temporarily_blocked">%1$s har blockerats.</string>
+    <string name="app_unblocked">%1$s har avblockerats.</string>
+    <string name="app_permanently_blocked">%1$s har blockerats permanent.</string>
 </resources>

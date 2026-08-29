@@ -18,7 +18,6 @@
     <string name="restriction_status_off">App installation is allowed.</string>
     <string name="restriction_toggle_label">Block Play Store and app installation</string>
     <string name="app_restrictions_header">App access</string>
-    <string name="app_restrictions_description">Block or allow each installed app as needed.</string>
     <string name="app_restrictions_empty">No launchable apps were found on this device.</string>
     <string name="blocked_apps_header">Blocked apps</string>
     <string name="blocked_apps_description">Only blocked apps are listed here. Use Add or remove to change the list.</string>
@@ -65,4 +64,15 @@
     <string name="app_changes_failed">Some changes could not be applied.</string>
     <string name="app_changes_applied">App restrictions updated.</string>
     <string name="permanent_app_changes_applied">Permanent app blocks updated.</string>
+    <string name="temporarily_block_app_description">Temporarily block %1$s</string>
+    <string name="temporarily_unblock_app_description">Unblock %1$s</string>
+    <string name="permanently_block_app_description">Permanently block %1$s</string>
+    <string name="app_is_permanently_blocked_description">%1$s is permanently blocked</string>
+    <string name="permanent_block_unavailable_description">%1$s cannot be permanently blocked</string>
+    <string name="confirm_permanent_block_title">Permanently block app?</string>
+    <string name="confirm_permanent_block_message">Permanently block %1$s? This can only be reversed with a factory reset.</string>
+    <string name="confirm_permanent_block_positive">Permanently block</string>
+    <string name="app_temporarily_blocked">%1$s blocked.</string>
+    <string name="app_unblocked">%1$s unblocked.</string>
+    <string name="app_permanently_blocked">%1$s permanently blocked.</string>
 </resources>

@@ -18,7 +18,6 @@
     <string name="restriction_status_off">Die App-Installation ist erlaubt.</string>
     <string name="restriction_toggle_label">Play Store und App-Installation blockieren</string>
     <string name="app_restrictions_header">App-Zugriff</string>
-    <string name="app_restrictions_description">Blockieren oder erlauben Sie jede installierte App nach Bedarf.</string>
     <string name="app_restrictions_empty">Auf diesem Gerät wurden keine startbaren Apps gefunden.</string>
     <string name="blocked_apps_header">Blockierte Apps</string>
     <string name="blocked_apps_description">Hier werden nur blockierte Apps angezeigt. Verwenden Sie „Hinzufügen oder entfernen“, um die Liste zu ändern.</string>
@@ -65,4 +64,10 @@
     <string name="app_changes_failed">Einige Änderungen konnten nicht angewendet werden.</string>
     <string name="app_changes_applied">App-Einschränkungen aktualisiert.</string>
     <string name="permanent_app_changes_applied">Dauerhafte App-Sperren aktualisiert.</string>
+    <string name="confirm_permanent_block_title">App dauerhaft blockieren?</string>
+    <string name="confirm_permanent_block_message">%1$s dauerhaft blockieren? Dies kann nur durch Zurücksetzen auf die Werkseinstellungen rückgängig gemacht werden.</string>
+    <string name="confirm_permanent_block_positive">Dauerhaft blockieren</string>
+    <string name="app_temporarily_blocked">%1$s wurde blockiert.</string>
+    <string name="app_unblocked">%1$s wurde entsperrt.</string>
+    <string name="app_permanently_blocked">%1$s wurde dauerhaft blockiert.</string>
 </resources>
