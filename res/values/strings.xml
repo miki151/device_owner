@@ -75,4 +75,15 @@
     <string name="app_temporarily_blocked">%1$s blocked.</string>
     <string name="app_unblocked">%1$s unblocked.</string>
     <string name="app_permanently_blocked">%1$s permanently blocked.</string>
+    <string name="status_policy_access_missing">App Blocker cannot access the system controls needed to manage app restrictions.</string>
+    <string name="app_policy_state_unknown">Unable to check this app’s restriction.</string>
+    <string name="app_policy_state_inconsistent">This app’s restriction does not match its current visibility.</string>
+    <string name="app_saved_block_inactive">The saved block is not currently hiding this app.</string>
+    <string name="app_blocked_by_other">Restricted by another controller, such as parental controls or a work administrator.</string>
+    <string name="app_hidden_elsewhere">This app is hidden outside App Blocker.</string>
+    <string name="app_unblocked_but_restricted">App Blocker’s restriction was removed. Another controller still restricts this app.</string>
+    <string name="app_changes_other_restriction">Changes saved. Some apps remain restricted by another controller.</string>
+    <string name="app_policy_verification_title">Could not verify restriction</string>
+    <string name="app_policy_verification_failed">App Blocker could not confirm that the restriction and app visibility agree. Further changes in this operation were stopped. Reopen App Blocker to check the current status.</string>
+    <string name="app_installation_controls_failed">The Play Store restriction was updated, but the app installation controls could not be fully updated.</string>
 </resources>

@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:focusable="false"
-            android:text="@string/status_device_owner_missing"
+            android:text="@string/status_policy_access_missing"
             android:textColor="@color/permanent_block_icon"
             android:visibility="gone" />
 

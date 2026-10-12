@@ -43,7 +43,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/status_device_owner_missing"
+            android:text="@string/status_policy_access_missing"
             android:visibility="gone" />
 
         <Button

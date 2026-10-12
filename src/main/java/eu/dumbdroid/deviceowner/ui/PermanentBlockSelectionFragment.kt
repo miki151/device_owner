@@ -22,7 +22,7 @@ class PermanentBlockSelectionFragment : Fragment() {
     private var descriptionText: TextView? = null
     private var appListContainer: ViewGroup? = null
     private var appListEmptyText: TextView? = null
-    private var deviceOwnerWarning: TextView? = null
+    private var policyAccessWarning: TextView? = null
     private var confirmButton: Button? = null
     private var cancelButton: Button? = null
 
@@ -41,7 +41,7 @@ class PermanentBlockSelectionFragment : Fragment() {
         descriptionText = view.findViewById(R.id.app_selection_description)
         appListContainer = view.findViewById(R.id.app_selection_list_container)
         appListEmptyText = view.findViewById(R.id.app_selection_empty_text)
-        deviceOwnerWarning = view.findViewById(R.id.device_owner_warning)
+        policyAccessWarning = view.findViewById(R.id.device_owner_warning)
         confirmButton = view.findViewById(R.id.confirm_button)
         cancelButton = view.findViewById(R.id.cancel_button)
         return view
@@ -59,9 +59,9 @@ class PermanentBlockSelectionFragment : Fragment() {
     private fun loadApps() {
         val activity = requireActivity() as MainActivity
         val restrictionManager = activity.getRestrictionManager()
-        val isDeviceOwner = restrictionManager.isDeviceOwner()
-        deviceOwnerWarning?.isVisible = !isDeviceOwner
-        confirmButton?.isEnabled = isDeviceOwner
+        val canManagePolicies = restrictionManager.canManagePolicies()
+        policyAccessWarning?.isVisible = !canManagePolicies
+        confirmButton?.isEnabled = canManagePolicies
 
         permanentlyBlocked = restrictionManager.getPermanentlyBlockedApplications()
         apps = restrictionManager.getManageableApplications()
@@ -71,10 +71,10 @@ class PermanentBlockSelectionFragment : Fragment() {
         apps.forEach { app ->
             pendingStates[app.packageName] = permanentlyBlocked.contains(app.packageName)
         }
-        updateApplicationList(isDeviceOwner)
+        updateApplicationList(canManagePolicies)
     }
 
-    private fun updateApplicationList(isDeviceOwner: Boolean) {
+    private fun updateApplicationList(canManagePolicies: Boolean) {
         val container = appListContainer ?: return
         toggleViews.forEach { it.setOnCheckedChangeListener(null) }
         toggleViews.clear()
@@ -86,6 +86,7 @@ class PermanentBlockSelectionFragment : Fragment() {
             return
         }
 
+        val restrictionManager = (requireActivity() as MainActivity).getRestrictionManager()
         val inflater = LayoutInflater.from(container.context)
         apps.forEach { app ->
             val itemView = inflater.inflate(R.layout.item_app_toggle, container, false)
@@ -96,8 +97,11 @@ class PermanentBlockSelectionFragment : Fragment() {
             val initiallyBlocked = pendingStates[app.packageName] ?: false
             val isAlreadyPermanent = permanentlyBlocked.contains(app.packageName)
             switch.text = app.label
-            switch.isEnabled = isDeviceOwner && !isAlreadyPermanent
-            packageView.text = app.packageName
+            val state = restrictionManager.getBlockState(app.packageName)
+            switch.isEnabled = canManagePolicies && state.snapshot != null && !isAlreadyPermanent
+            packageView.text = listOfNotNull(
+                app.packageName, state.statusText(requireContext()),
+            ).joinToString("\n")
             val listener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
                 pendingStates[app.packageName] = isChecked
             }
@@ -133,25 +137,17 @@ class PermanentBlockSelectionFragment : Fragment() {
     private fun applyChanges(packagesToBlock: Set<String>) {
         val activity = requireActivity() as MainActivity
         val restrictionManager = activity.getRestrictionManager()
-        val failures = mutableListOf<String>()
-        packagesToBlock.forEach { packageName ->
-            val applied = restrictionManager.setApplicationPermanentlyBlocked(packageName)
-            if (!applied) {
-                failures += packageName
-            } else {
-                pendingStates[packageName] = true
+        for (packageName in packagesToBlock) {
+            val result = restrictionManager.setApplicationPermanentlyBlocked(packageName)
+            if (!result.applied) {
+                result.showFailure(requireContext())
+                loadApps()
+                return
             }
         }
-        permanentlyBlocked = restrictionManager.getPermanentlyBlockedApplications()
-        if (failures.isEmpty()) {
-            Toast.makeText(requireContext(), R.string.permanent_app_changes_applied, Toast.LENGTH_SHORT)
-                .show()
-            parentFragmentManager.popBackStack()
-        } else {
-            Toast.makeText(requireContext(), R.string.app_changes_failed, Toast.LENGTH_SHORT)
-                .show()
-            loadApps()
-        }
+        Toast.makeText(requireContext(), R.string.permanent_app_changes_applied, Toast.LENGTH_SHORT)
+            .show()
+        parentFragmentManager.popBackStack()
     }
 
     private fun labelForPackage(packageName: String): String {
@@ -184,7 +180,7 @@ class PermanentBlockSelectionFragment : Fragment() {
         descriptionText = null
         appListContainer = null
         appListEmptyText = null
-        deviceOwnerWarning = null
+        policyAccessWarning = null
         confirmButton = null
         cancelButton = null
         super.onDestroyView()

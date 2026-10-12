@@ -16,13 +16,14 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import eu.dumbdroid.deviceowner.R
 import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
+import eu.dumbdroid.deviceowner.policy.PolicyChangeResult
 import java.util.Locale
 
 class RestrictionFragment : Fragment() {
 
     private var appListContainer: ViewGroup? = null
     private var appListEmptyText: TextView? = null
-    private var deviceOwnerWarning: TextView? = null
+    private var policyAccessWarning: TextView? = null
     private var changePinButton: Button? = null
     private var callback: Callback? = null
 
@@ -44,7 +45,7 @@ class RestrictionFragment : Fragment() {
         view.defaultFocusHighlightEnabled = false
         appListContainer = view.findViewById(R.id.app_list_container)
         appListEmptyText = view.findViewById(R.id.app_list_empty_text)
-        deviceOwnerWarning = view.findViewById(R.id.device_owner_warning)
+        policyAccessWarning = view.findViewById(R.id.device_owner_warning)
         changePinButton = view.findViewById(R.id.change_pin_button)
         return view
     }
@@ -63,7 +64,7 @@ class RestrictionFragment : Fragment() {
         val activity = requireActivity() as MainActivity
         val pinStorage = activity.getPinStorage()
         val restrictionManager = activity.getRestrictionManager()
-        val isDeviceOwner = restrictionManager.isDeviceOwner()
+        val canManagePolicies = restrictionManager.canManagePolicies()
         val permanentlyBlockedPackages = restrictionManager.getPermanentlyBlockedApplications()
         val apps = restrictionManager.getManageableApplications().toMutableList()
 
@@ -80,15 +81,11 @@ class RestrictionFragment : Fragment() {
             .map { app ->
                 val isPlayStore = app.packageName == DeviceRestrictionManager.PLAY_STORE_PACKAGE
                 val isPermanent = permanentlyBlockedPackages.contains(app.packageName)
-                val isBlocked = isPermanent || if (isPlayStore) {
-                    pinStorage.isRestrictionEnabled() ||
-                        restrictionManager.isApplicationBlocked(app.packageName)
-                } else {
-                    restrictionManager.isApplicationBlocked(app.packageName)
-                }
+                val state = restrictionManager.getBlockState(app.packageName)
                 AppRow(
                     app = app,
-                    isBlocked = isBlocked,
+                    isBlocked = isPermanent || state.requested,
+                    state = state,
                     isPermanent = isPermanent,
                     canBePermanentlyBlocked = !isPlayStore,
                 )
@@ -102,13 +99,13 @@ class RestrictionFragment : Fragment() {
         changePinButton?.setText(
             if (pinStorage.isPinSet()) R.string.change_pin_button else R.string.set_pin_button,
         )
-        deviceOwnerWarning?.isVisible = !isDeviceOwner
-        updateApplicationList(rows, isDeviceOwner, restrictionManager)
+        policyAccessWarning?.isVisible = !canManagePolicies
+        updateApplicationList(rows, canManagePolicies, restrictionManager)
     }
 
     private fun updateApplicationList(
         rows: List<AppRow>,
-        isDeviceOwner: Boolean,
+        canManagePolicies: Boolean,
         restrictionManager: DeviceRestrictionManager,
     ) {
         val container = appListContainer ?: return
@@ -131,6 +128,11 @@ class RestrictionFragment : Fragment() {
 
             iconView.setImageDrawable(restrictionManager.getApplicationIcon(row.app.packageName))
             nameView.text = row.app.label
+            val statusView = itemView.findViewById<TextView>(R.id.app_policy_status)
+                ?: return@forEach
+            statusView.text = row.state.statusText(requireContext())
+            statusView.isVisible = statusView.text.isNotEmpty()
+            val canEdit = canManagePolicies && row.state.snapshot != null
             if (row.isPermanent) {
                 nameView.paintFlags = nameView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
                 nameView.alpha = PERMANENT_ROW_ALPHA
@@ -152,7 +154,7 @@ class RestrictionFragment : Fragment() {
             temporaryBlockButton.isSelected = row.isBlocked
             temporaryBlockButton.contentDescription = temporaryActionDescription
             temporaryBlockButton.tooltipText = temporaryActionDescription
-            temporaryBlockButton.isEnabled = isDeviceOwner && !row.isPermanent
+            temporaryBlockButton.isEnabled = canEdit && !row.isPermanent
             temporaryBlockButton.isFocusable = temporaryBlockButton.isEnabled
             temporaryBlockButton.alpha =
                 if (temporaryBlockButton.isEnabled) ENABLED_ICON_ALPHA else DISABLED_ICON_ALPHA
@@ -177,7 +179,7 @@ class RestrictionFragment : Fragment() {
             permanentBlockButton.contentDescription = permanentActionDescription
             permanentBlockButton.tooltipText = permanentActionDescription
             permanentBlockButton.isEnabled =
-                isDeviceOwner && row.canBePermanentlyBlocked && !row.isPermanent
+                canEdit && row.canBePermanentlyBlocked && !row.isPermanent
             permanentBlockButton.isFocusable = permanentBlockButton.isEnabled
             permanentBlockButton.alpha =
                 if (permanentBlockButton.isEnabled) ENABLED_ICON_ALPHA else DISABLED_ICON_ALPHA
@@ -195,29 +197,27 @@ class RestrictionFragment : Fragment() {
     ) {
         val activity = requireActivity() as MainActivity
         val restrictionManager = activity.getRestrictionManager()
-        val applied = if (app.packageName == DeviceRestrictionManager.PLAY_STORE_PACKAGE) {
-            val result = restrictionManager.setPlayStoreRestricted(blocked)
-            if (result) {
-                activity.getPinStorage().setRestrictionEnabled(blocked)
-            }
-            result
+        val result = if (app.packageName == DeviceRestrictionManager.PLAY_STORE_PACKAGE) {
+            restrictionManager.setPlayStoreRestricted(blocked)
         } else {
             restrictionManager.setApplicationBlocked(app.packageName, blocked)
         }
 
-        if (applied) {
-            Toast.makeText(
-                requireContext(),
+        if (result.applied) {
+            val message = if (result == PolicyChangeResult.BLOCKED_BY_OTHER) {
+                getString(R.string.app_unblocked_but_restricted)
+            } else {
                 getString(
                     if (blocked) R.string.app_temporarily_blocked else R.string.app_unblocked,
                     app.label,
-                ),
-                Toast.LENGTH_SHORT,
-            ).show()
-            refreshState()
+                )
+            }
+            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(requireContext(), R.string.app_changes_failed, Toast.LENGTH_SHORT).show()
+            result.showFailure(requireContext())
         }
+        // Recovery may have recorded a policy even when the requested operation failed.
+        refreshState()
     }
 
     private fun showPermanentBlockWarning(app: DeviceRestrictionManager.ManagedApp) {
@@ -233,16 +233,17 @@ class RestrictionFragment : Fragment() {
 
     private fun permanentlyBlock(app: DeviceRestrictionManager.ManagedApp) {
         val restrictionManager = (requireActivity() as MainActivity).getRestrictionManager()
-        if (restrictionManager.setApplicationPermanentlyBlocked(app.packageName)) {
+        val result = restrictionManager.setApplicationPermanentlyBlocked(app.packageName)
+        if (result.applied) {
             Toast.makeText(
                 requireContext(),
                 getString(R.string.app_permanently_blocked, app.label),
                 Toast.LENGTH_SHORT,
             ).show()
-            refreshState()
         } else {
-            Toast.makeText(requireContext(), R.string.app_changes_failed, Toast.LENGTH_SHORT).show()
+            result.showFailure(requireContext())
         }
+        refreshState()
     }
 
     override fun onDestroyView() {
@@ -250,7 +251,7 @@ class RestrictionFragment : Fragment() {
         changePinButton?.setOnClickListener(null)
         appListContainer = null
         appListEmptyText = null
-        deviceOwnerWarning = null
+        policyAccessWarning = null
         changePinButton = null
         super.onDestroyView()
     }
@@ -268,6 +269,7 @@ class RestrictionFragment : Fragment() {
     private data class AppRow(
         val app: DeviceRestrictionManager.ManagedApp,
         val isBlocked: Boolean,
+        val state: DeviceRestrictionManager.BlockState,
         val isPermanent: Boolean,
         val canBePermanentlyBlocked: Boolean,
     )

@@ -14,18 +14,20 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import eu.dumbdroid.deviceowner.R
 import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
+import eu.dumbdroid.deviceowner.policy.PolicyChangeResult
 import java.util.Locale
 
 class AppSelectionFragment : Fragment() {
 
     private var appListContainer: ViewGroup? = null
     private var appListEmptyText: TextView? = null
-    private var deviceOwnerWarning: TextView? = null
+    private var policyAccessWarning: TextView? = null
     private var confirmButton: Button? = null
     private var cancelButton: Button? = null
 
     private var apps: List<DeviceRestrictionManager.ManagedApp> = emptyList()
     private val toggleViews = mutableListOf<SwitchCompat>()
+    private val blockStates = mutableMapOf<String, DeviceRestrictionManager.BlockState>()
     private val initialStates = mutableMapOf<String, Boolean>()
     private val pendingStates = mutableMapOf<String, Boolean>()
     private var playStoreBlockedInitial: Boolean = false
@@ -39,7 +41,7 @@ class AppSelectionFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_app_selection, container, false)
         appListContainer = view.findViewById(R.id.app_selection_list_container)
         appListEmptyText = view.findViewById(R.id.app_selection_empty_text)
-        deviceOwnerWarning = view.findViewById(R.id.device_owner_warning)
+        policyAccessWarning = view.findViewById(R.id.device_owner_warning)
         confirmButton = view.findViewById(R.id.confirm_button)
         cancelButton = view.findViewById(R.id.cancel_button)
         return view
@@ -55,10 +57,9 @@ class AppSelectionFragment : Fragment() {
     private fun loadApps() {
         val activity = requireActivity() as MainActivity
         val restrictionManager = activity.getRestrictionManager()
-        val pinStorage = activity.getPinStorage()
-        val isDeviceOwner = restrictionManager.isDeviceOwner()
-        deviceOwnerWarning?.isVisible = !isDeviceOwner
-        confirmButton?.isEnabled = isDeviceOwner
+        val canManagePolicies = restrictionManager.canManagePolicies()
+        policyAccessWarning?.isVisible = !canManagePolicies
+        confirmButton?.isEnabled = canManagePolicies
 
         val permanentlyBlocked =
             restrictionManager.getPermanentlyBlockedApplications()
@@ -66,21 +67,25 @@ class AppSelectionFragment : Fragment() {
             .filterNot { permanentlyBlocked.contains(it.packageName) }
             .sortedBy { it.label.lowercase(Locale.getDefault()) }
 
-        playStoreBlockedInitial = pinStorage.isRestrictionEnabled() ||
-            restrictionManager.isApplicationBlocked(DeviceRestrictionManager.PLAY_STORE_PACKAGE)
+        blockStates.clear()
+        val playStore = DeviceRestrictionManager.PLAY_STORE_PACKAGE
+        blockStates[playStore] = restrictionManager.getBlockState(playStore)
+        playStoreBlockedInitial = blockStates.getValue(playStore).requested
         playStoreBlockedPending = playStoreBlockedInitial
 
         initialStates.clear()
         pendingStates.clear()
         apps.forEach { app ->
-            val blocked = restrictionManager.isApplicationBlocked(app.packageName)
+            val state = restrictionManager.getBlockState(app.packageName)
+            blockStates[app.packageName] = state
+            val blocked = state.requested
             initialStates[app.packageName] = blocked
             pendingStates[app.packageName] = blocked
         }
-        updateApplicationList(isDeviceOwner)
+        updateApplicationList(canManagePolicies)
     }
 
-    private fun updateApplicationList(isDeviceOwner: Boolean) {
+    private fun updateApplicationList(canManagePolicies: Boolean) {
         val container = appListContainer ?: return
         toggleViews.forEach { it.setOnCheckedChangeListener(null) }
         toggleViews.clear()
@@ -96,8 +101,11 @@ class AppSelectionFragment : Fragment() {
             playStoreView.findViewById<TextView>(R.id.app_package_text)
         if (playStoreSwitch != null && playStorePackageView != null) {
             playStoreSwitch.text = getString(R.string.play_store_block_label)
-            playStoreSwitch.isEnabled = isDeviceOwner
-            playStorePackageView.text = DeviceRestrictionManager.PLAY_STORE_PACKAGE
+            val state = blockStates.getValue(DeviceRestrictionManager.PLAY_STORE_PACKAGE)
+            playStoreSwitch.isEnabled = canManagePolicies && state.snapshot != null
+            playStorePackageView.text = listOfNotNull(
+                DeviceRestrictionManager.PLAY_STORE_PACKAGE, state.statusText(requireContext()),
+            ).joinToString("\n")
             val listener = CompoundButton.OnCheckedChangeListener { _, isChecked ->
                 playStoreBlockedPending = isChecked
             }
@@ -114,8 +122,11 @@ class AppSelectionFragment : Fragment() {
                 ?: return@forEach
             val initialBlocked = pendingStates[app.packageName] ?: false
             switch.text = app.label
-            switch.isEnabled = isDeviceOwner
-            packageView.text = app.packageName
+            val state = blockStates.getValue(app.packageName)
+            switch.isEnabled = canManagePolicies && state.snapshot != null
+            packageView.text = listOfNotNull(
+                app.packageName, state.statusText(requireContext()),
+            ).joinToString("\n")
             val listener = object : CompoundButton.OnCheckedChangeListener {
                 override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
                     pendingStates[app.packageName] = isChecked
@@ -167,36 +178,27 @@ class AppSelectionFragment : Fragment() {
     private fun applyChanges(changes: Map<String, Boolean>) {
         val activity = requireActivity() as MainActivity
         val restrictionManager = activity.getRestrictionManager()
-        val pinStorage = activity.getPinStorage()
-        val failures = mutableListOf<String>()
-        changes.forEach { (packageName, blocked) ->
-            val applied = if (packageName == DeviceRestrictionManager.PLAY_STORE_PACKAGE) {
-                val result = restrictionManager.setPlayStoreRestricted(blocked)
-                if (result) {
-                    pinStorage.setRestrictionEnabled(blocked)
-                }
-                result
+        var restrictedByOther = false
+        for ((packageName, blocked) in changes) {
+            val result = if (packageName == DeviceRestrictionManager.PLAY_STORE_PACKAGE) {
+                restrictionManager.setPlayStoreRestricted(blocked)
             } else {
                 restrictionManager.setApplicationBlocked(packageName, blocked)
             }
-            if (!applied) {
-                failures += packageName
-            } else {
-                if (packageName == DeviceRestrictionManager.PLAY_STORE_PACKAGE) {
-                    playStoreBlockedInitial = blocked
-                } else {
-                    initialStates[packageName] = blocked
-                }
+            if (!result.applied) {
+                result.showFailure(requireContext())
+                loadApps()
+                return
             }
+            restrictedByOther = restrictedByOther || result == PolicyChangeResult.BLOCKED_BY_OTHER
         }
-        if (failures.isEmpty()) {
-            Toast.makeText(requireContext(), R.string.app_changes_applied, Toast.LENGTH_SHORT)
-                .show()
-            parentFragmentManager.popBackStack()
-        } else {
-            Toast.makeText(requireContext(), R.string.app_changes_failed, Toast.LENGTH_SHORT)
-                .show()
-        }
+        Toast.makeText(
+            requireContext(),
+            if (restrictedByOther) R.string.app_changes_other_restriction
+            else R.string.app_changes_applied,
+            Toast.LENGTH_LONG,
+        ).show()
+        parentFragmentManager.popBackStack()
     }
 
     private fun labelForPackage(packageName: String): String {
@@ -233,7 +235,7 @@ class AppSelectionFragment : Fragment() {
         cancelButton?.setOnClickListener(null)
         appListContainer = null
         appListEmptyText = null
-        deviceOwnerWarning = null
+        policyAccessWarning = null
         confirmButton = null
         cancelButton = null
         super.onDestroyView()

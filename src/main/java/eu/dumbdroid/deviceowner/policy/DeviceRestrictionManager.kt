@@ -7,9 +7,9 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.os.Build
-import android.os.Process
 import android.os.UserManager
 import android.util.Log
+import eu.dumbdroid.deviceowner.storage.PinStorage
 import eu.dumbdroid.deviceowner.ui.PlayStoreBlockedActivity
 
 class DeviceRestrictionManager(private val context: Context) {
@@ -19,73 +19,90 @@ class DeviceRestrictionManager(private val context: Context) {
     private val preferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
+    private val backend by lazy { AndroidHiddenPolicyBackend(context) }
+    private val controller by lazy {
+        HiddenPolicyController(backend) { pkg, requested, state, error ->
+            Log.e(TAG, "Hidden policy failed: package=$pkg requested=$requested snapshot=$state", error)
+        }
+    }
+
+    data class BlockState(
+        val requested: Boolean,
+        val snapshot: HiddenPolicySnapshot?,
+    )
+
+    fun getBlockState(packageName: String): BlockState {
+        val snapshot = try {
+            backend.read(packageName)
+        } catch (e: Exception) {
+            Log.e(TAG, "Cannot read hidden policy for $packageName", e)
+            null
+        }
+        val stored = if (packageName == PLAY_STORE_PACKAGE) {
+            PinStorage(context).isRestrictionEnabled()
+        } else {
+            getStoredBlockedApplications().contains(packageName)
+        }
+        return BlockState(
+            isApplicationPermanentlyBlocked(packageName) || (snapshot?.ownHidden ?: stored),
+            snapshot,
+        )
+    }
+
     data class ManagedApp(val packageName: String, val label: String)
 
-    fun isDeviceOwner(): Boolean = canModifyHiddenState()
-
-    fun setPlayStoreRestricted(restricted: Boolean): Boolean {
-        if (!canModifyHiddenState()) {
-            return false
+    fun canManagePolicies(): Boolean = try {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            false
+        } else {
+            backend.read(context.packageName)
+            true
         }
-        val success = setApplicationHidden(PLAY_STORE_PACKAGE, restricted)
-        if (success) {
-            setPlayStoreBlockerEnabled(restricted)
-            setUnknownSourcesRestriction(restricted)
-        }
-        return success
+    } catch (e: Exception) {
+        Log.e(TAG, "Device policy access unavailable", e)
+        false
     }
 
-    fun setApplicationBlocked(packageName: String, blocked: Boolean): Boolean {
-        if (!canModifyHiddenState()) {
-            return false
-        }
-        if (packageName == context.packageName) {
-            return false
-        }
-        if (!blocked && isApplicationPermanentlyBlocked(packageName)) {
-            return false
-        }
-        val success = setApplicationHidden(packageName, blocked)
-        if (success) {
-            if (!isApplicationPermanentlyBlocked(packageName)) {
-                updateBlockedApplications(packageName, blocked)
+    @Synchronized
+    fun setPlayStoreRestricted(restricted: Boolean): PolicyChangeResult {
+        val result = setApplicationHidden(PLAY_STORE_PACKAGE, restricted)
+        if (result.applied) {
+            PinStorage(context).setRestrictionEnabled(restricted)
+            try {
+                setPlayStoreBlockerEnabled(restricted)
+                setUnknownSourcesRestriction(restricted)
+            } catch (e: Exception) {
+                Log.e(TAG, "Play Store policy applied, but installation controls failed", e)
+                return PolicyChangeResult.SIDE_EFFECT_FAILED
             }
         }
-        return success
+        return result
     }
 
-    fun setApplicationPermanentlyBlocked(packageName: String): Boolean {
-        if (!canModifyHiddenState()) {
-            return false
+    @Synchronized
+    fun setApplicationBlocked(packageName: String, blocked: Boolean): PolicyChangeResult {
+        if (packageName == context.packageName || packageName == PLAY_STORE_PACKAGE ||
+            (!blocked && isApplicationPermanentlyBlocked(packageName))) {
+            return PolicyChangeResult.FAILED
         }
+        val result = setApplicationHidden(packageName, blocked)
+        if (result.applied && !isApplicationPermanentlyBlocked(packageName)) {
+            updateBlockedApplications(packageName, blocked)
+        }
+        return result
+    }
+
+    @Synchronized
+    fun setApplicationPermanentlyBlocked(packageName: String): PolicyChangeResult {
         if (packageName == context.packageName || packageName == PLAY_STORE_PACKAGE) {
-            return false
+            return PolicyChangeResult.FAILED
         }
-        val success = setApplicationHidden(packageName, true)
-        if (success) {
+        val result = setApplicationHidden(packageName, true)
+        if (result.applied) {
             addPermanentlyBlockedApplication(packageName)
             removeSoftBlockedApplication(packageName)
         }
-        return success
-    }
-
-    fun isApplicationBlocked(packageName: String): Boolean {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                packageManager.getApplicationHiddenSettingAsUser(
-                    packageName,
-                    Process.myUserHandle(),
-                )
-            } else {
-                getStoredBlockedApplications().contains(packageName)
-            }
-        } catch (securityException: SecurityException) {
-            getStoredBlockedApplications().contains(packageName)
-        } catch (notFound: PackageManager.NameNotFoundException) {
-            false
-        } catch (exception: Exception) {
-            getStoredBlockedApplications().contains(packageName)
-        }
+        return result
     }
 
     fun isApplicationPermanentlyBlocked(packageName: String): Boolean {
@@ -172,30 +189,12 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
     }
 
     private fun setUnknownSourcesRestriction(enabled: Boolean) {
-        val manager = userManager ?: return
-        try {
-            manager.setUserRestriction(UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES, enabled)
-        } catch (_: SecurityException) {
-            // Ignore if the platform rejects the request; suspension still applies.
-        }
+        checkNotNull(userManager).setUserRestriction(UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES, enabled)
     }
 
-    private fun setApplicationHidden(
-        packageName: String,
-        hidden: Boolean,
-    ): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            return false
-        }
-        return try {
-            packageManager.setApplicationHiddenSettingAsUser(
-                packageName,
-                hidden,
-                Process.myUserHandle(),
-            )
-        } catch (exception: Exception) {
-            false
-        }
+    private fun setApplicationHidden(packageName: String, hidden: Boolean): PolicyChangeResult {
+        if (!canManagePolicies()) return PolicyChangeResult.FAILED
+        return controller.setHidden(packageName, hidden)
     }
 
     private fun updateBlockedApplications(packageName: String, blocked: Boolean) {
@@ -257,22 +256,6 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
         )
     }
 
-    private fun canModifyHiddenState(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            return false
-        }
-        return try {
-            packageManager.getApplicationHiddenSettingAsUser(
-                context.packageName,
-                Process.myUserHandle(),
-            )
-            true
-        } catch (exception: Exception) {
-	    Log.e("Dumbdroid admin", "Can't modify hidden state", exception)
-            false
-        }
-    }
-
     private fun queryLauncherActivities(intent: Intent): List<ResolveInfo> {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManager.queryIntentActivities(
@@ -286,6 +269,7 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
     }
 
     companion object {
+        private const val TAG = "AppBlockerPolicy"
         private const val INSTALLED_APPLICATION_FLAGS =
             PackageManager.MATCH_UNINSTALLED_PACKAGES or PackageManager.MATCH_DISABLED_COMPONENTS
         private const val PREF_NAME = "device_owner_restrictions"
