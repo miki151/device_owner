@@ -9,14 +9,19 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.EditText
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import android.text.InputType
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import eu.dumbdroid.deviceowner.R
 import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
 import eu.dumbdroid.deviceowner.policy.PolicyChangeResult
+import eu.dumbdroid.deviceowner.policy.InternetPolicyController
+import eu.dumbdroid.deviceowner.policy.InternetPolicyResult
 import java.util.Locale
 
 class RestrictionFragment : Fragment() {
@@ -25,6 +30,7 @@ class RestrictionFragment : Fragment() {
     private var appListEmptyText: TextView? = null
     private var policyAccessWarning: TextView? = null
     private var changePinButton: Button? = null
+    private var dnsDialog: AlertDialog? = null
     private var callback: Callback? = null
 
     override fun onAttach(context: Context) {
@@ -100,7 +106,115 @@ class RestrictionFragment : Fragment() {
             if (pinStorage.isPinSet()) R.string.change_pin_button else R.string.set_pin_button,
         )
         policyAccessWarning?.isVisible = !canManagePolicies
+        refreshInternetControls()
         updateApplicationList(rows, canManagePolicies, restrictionManager)
+    }
+
+    private fun refreshInternetControls() {
+        val view = view ?: return
+        val activity = requireActivity() as MainActivity
+        val manager = activity.getInternetRestrictionManager()
+        val dns = manager.dnsState()
+        val tethering = manager.isTetheringBlocked()
+        view.requireViewById<TextView>(R.id.internet_pin_warning).isVisible =
+            !activity.getPinStorage().isPinSet()
+
+        val dnsSwitch = view.requireViewById<Switch>(R.id.filtering_dns_switch)
+        dnsSwitch.setOnCheckedChangeListener(null)
+        dnsSwitch.isChecked = dns?.hostname != null
+        dnsSwitch.isEnabled = dns != null
+        view.requireViewById<TextView>(R.id.filtering_dns_status).text = when {
+            !manager.isSupportedUser -> getString(R.string.internet_control_primary_user)
+            dns == null -> getString(R.string.internet_control_unknown)
+            dns.applied -> getString(R.string.filtering_dns_on, dns.hostname)
+            dns.hostname != null -> getString(R.string.filtering_dns_incomplete)
+            dns.locked -> getString(R.string.filtering_dns_elsewhere)
+            else -> getString(R.string.filtering_dns_off)
+        }
+        dnsSwitch.setOnCheckedChangeListener { _, enabled ->
+            if (!requireInternetPin()) {
+                refreshInternetControls()
+            } else if (enabled) {
+                refreshInternetControls()
+                showDnsDialog()
+            } else {
+                reportInternetResult(manager.setDns(null))
+            }
+        }
+        view.requireViewById<Button>(R.id.edit_dns_button).apply {
+            isVisible = dns?.hostname != null
+            setOnClickListener { if (requireInternetPin()) showDnsDialog() }
+        }
+
+        val tetheringSwitch = view.requireViewById<Switch>(R.id.block_tethering_switch)
+        tetheringSwitch.setOnCheckedChangeListener(null)
+        tetheringSwitch.isChecked = tethering == true
+        tetheringSwitch.isEnabled = tethering != null
+        view.requireViewById<TextView>(R.id.block_tethering_status).setText(when {
+            !manager.isSupportedUser -> R.string.internet_control_primary_user
+            tethering == null -> R.string.internet_control_unknown
+            tethering -> R.string.block_tethering_on
+            else -> R.string.block_tethering_off
+        })
+        tetheringSwitch.setOnCheckedChangeListener { _, enabled ->
+            if (requireInternetPin()) reportInternetResult(manager.setTetheringBlocked(enabled))
+            else refreshInternetControls()
+        }
+    }
+
+    private fun requireInternetPin(): Boolean {
+        if ((requireActivity() as MainActivity).getPinStorage().isPinSet()) return true
+        Toast.makeText(requireContext(), R.string.internet_pin_required, Toast.LENGTH_LONG).show()
+        callback?.onRequestChangePin()
+        return false
+    }
+
+    private fun showDnsDialog() {
+        val manager = (requireActivity() as MainActivity).getInternetRestrictionManager()
+        val input = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setSingleLine(true)
+            hint = getString(R.string.filtering_dns_hostname_hint)
+            contentDescription = hint
+            setText(manager.dnsState()?.hostname ?: InternetPolicyController.DEFAULT_HOSTNAME)
+            selectAll()
+        }
+        val padding = (24 * resources.displayMetrics.density).toInt()
+        val inputContainer = android.widget.FrameLayout(requireContext()).apply {
+            setPadding(padding, 0, padding, 0)
+            addView(input)
+        }
+        dnsDialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.filtering_dns_dialog_title)
+            .setMessage(R.string.filtering_dns_dialog_message)
+            .setView(inputContainer)
+            .setPositiveButton(R.string.filtering_dns_save, null)
+            .setNegativeButton(R.string.cancel_changes_button, null)
+            .create().also { dialog ->
+                dialog.setOnShowListener {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                        if (!requireInternetPin()) return@setOnClickListener
+                        val result = manager.setDns(input.text.toString())
+                        if (result == InternetPolicyResult.INVALID_HOSTNAME) {
+                            input.error = getString(R.string.filtering_dns_invalid)
+                        } else {
+                            dialog.dismiss()
+                            reportInternetResult(result)
+                        }
+                    }
+                }
+                dialog.show()
+            }
+    }
+
+    private fun reportInternetResult(result: InternetPolicyResult) {
+        Toast.makeText(requireContext(), when (result) {
+            InternetPolicyResult.APPLIED -> R.string.internet_control_updated
+            InternetPolicyResult.INVALID_HOSTNAME -> R.string.filtering_dns_invalid
+            InternetPolicyResult.RESTRICTED_ELSEWHERE -> R.string.internet_control_external
+            InternetPolicyResult.FAILED -> R.string.internet_control_failed
+        }, Toast.LENGTH_LONG).show()
+        refreshInternetControls()
     }
 
     private fun updateApplicationList(
@@ -249,6 +363,8 @@ class RestrictionFragment : Fragment() {
     override fun onDestroyView() {
         appListContainer?.removeAllViews()
         changePinButton?.setOnClickListener(null)
+        dnsDialog?.dismiss()
+        dnsDialog = null
         appListContainer = null
         appListEmptyText = null
         policyAccessWarning = null

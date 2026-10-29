@@ -73,6 +73,9 @@ class ChangePinFragment : Fragment() {
             newPin != confirmPin -> {
                 confirmPinInput?.error = getString(R.string.pin_mismatch)
             }
+            newPin.isEmpty() && !activity.getInternetRestrictionManager().canRemovePin() -> {
+                newPinInput?.error = getString(R.string.internet_pin_remove_blocked)
+            }
             else -> {
                 pinStorage.savePin(newPin)
                 val message = if (newPin.isEmpty()) {

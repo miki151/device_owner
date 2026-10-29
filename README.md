@@ -2,6 +2,40 @@
 
 Used for restricting apps and app installation.
 
+## Internet controls MVP
+
+The existing PIN gate protects configurable strict Private DNS and internet-sharing
+controls. A PIN is required and cannot be removed while either control is active
+or a failed DNS change still needs recovery. Only the system user can configure
+these device-wide settings.
+
+DNS defaults to `family.adguard-dns.com`; enter your curated resolver hostname later.
+The original nullable DNS mode/hostname is saved before the first change, preserved
+through provider edits, and restored on disable. Failed changes retain this snapshot
+for retry. An unreachable strict resolver may stop internet access. AdGuard Family
+is not a distracting-site denylist; app-specific DNS/proxies can bypass system DNS.
+
+**Ship the companion Settings patch in the same firmware.** Current Settings ignores
+App Blocker's base Private DNS restriction. The patch checks effective restrictions
+when displaying, opening, and saving the Private DNS preference. App Blocker alone
+cannot enforce that Settings lock.
+
+Android persists DNS and tethering restrictions across reboot; no boot receiver or
+reapplication is needed. The DNS restoration snapshot is excluded from cloud backup
+and device transfer. Firmware updates must preserve app data. Permanent locking,
+app-data clearing, and factory-reset prevention are outside this MVP.
+
+App Blocker controls the system/base tethering and installation flags directly,
+matching the existing unknown-sources control. It does not snapshot other writers'
+base flags. Independent device/profile-owner restrictions remain effective.
+Installation blocking also blocks app updates; temporarily allow installation to
+update apps. Review already-installed browsers and VPNs during parental setup.
+
+Run `bash tests/run-internet-policy-tests.sh` with `KOTLINC` set, Kotlin on PATH, or
+an Android build environment. Host tests cover restoration, provider edits, failures,
+PIN-removal eligibility, platform state, and secondary-user rejection. Live filtering,
+Settings enforcement, hotspot shutdown, and firmware upgrades need device checks.
+
 App visibility is managed through `DevicePolicyManager.setApplicationHidden(null, ...)`
 using the existing platform-signed system UID. The app does not register as a device
 owner, profile owner, or delegate. This implementation requires Android 14's policy
