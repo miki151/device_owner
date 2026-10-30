@@ -97,6 +97,13 @@
             android:layout_height="wrap_content"
             android:text="@string/filtering_dns_edit" />
 
+        <Button
+            android:id="@+id/edit_domains_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/blocked_domains_title" />
+
         <Switch
             android:id="@+id/block_tethering_switch"
             android:layout_width="match_parent"

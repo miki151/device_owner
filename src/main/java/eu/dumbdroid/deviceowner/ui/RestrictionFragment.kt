@@ -18,6 +18,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import eu.dumbdroid.deviceowner.R
+import eu.dumbdroid.deviceowner.policy.DomainBlocklist
 import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
 import eu.dumbdroid.deviceowner.policy.PolicyChangeResult
 import eu.dumbdroid.deviceowner.policy.InternetPolicyController
@@ -59,6 +60,9 @@ class RestrictionFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         changePinButton?.setOnClickListener { callback?.onRequestChangePin() }
+        view.requireViewById<Button>(R.id.edit_domains_button).setOnClickListener {
+            showDomainBlocklist()
+        }
     }
 
     override fun onResume() {
@@ -187,6 +191,50 @@ class RestrictionFragment : Fragment() {
                         } else {
                             dialog.dismiss()
                             reportInternetResult(result)
+                        }
+                    }
+                }
+                dialog.show()
+            }
+    }
+
+    private fun showDomainBlocklist() {
+        val blocklist = DomainBlocklist()
+        if (!blocklist.available) {
+            AlertDialog.Builder(requireContext()).setTitle(R.string.blocked_domains_title)
+                .setMessage(R.string.blocked_domains_update_required)
+                .setPositiveButton(android.R.string.ok, null).show()
+            return
+        }
+        val input = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            minLines = 4
+            maxLines = 8
+            hint = "reddit.com\nexample.com"
+        }
+        try {
+            input.setText(blocklist.read())
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), R.string.blocked_domains_read_failed, Toast.LENGTH_LONG).show()
+            return
+        }
+        dnsDialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.blocked_domains_title)
+            .setMessage(R.string.blocked_domains_description)
+            .setView(input)
+            .setPositiveButton(R.string.blocked_domains_save, null)
+            .setNegativeButton(R.string.cancel_changes_button, null)
+            .create().also { dialog ->
+                dialog.setOnShowListener {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                        try {
+                            blocklist.save(input.text.toString())
+                            dialog.dismiss()
+                        } catch (e: IllegalArgumentException) {
+                            input.error = e.message
+                        } catch (e: Exception) {
+                            input.error = getString(R.string.blocked_domains_save_failed)
                         }
                     }
                 }

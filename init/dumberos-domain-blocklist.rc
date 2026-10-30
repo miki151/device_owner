@@ -1,0 +1,3 @@
+on post-fs-data
+    mkdir /data/misc/dumberos 0700 system system
+    restorecon_recursive /data/misc/dumberos
