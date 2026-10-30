@@ -33,10 +33,6 @@ open class InternetPolicyController(
         backend.effectiveRestriction(TETHERING_RESTRICTION)
     }
 
-    fun canRemovePin(): Boolean = !isSupportedUser || access {
-        backend.dnsSession == null && !backend.baseRestriction(TETHERING_RESTRICTION)
-    } == true
-
     /** Null disables filtering. Save before writes; retain the original through edits and failures. */
     fun setDns(input: String?): InternetPolicyResult {
         val hostname = input?.let { normalizeHostname(it) ?: return InternetPolicyResult.INVALID_HOSTNAME }

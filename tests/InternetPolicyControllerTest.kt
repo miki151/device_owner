@@ -108,7 +108,6 @@ fun main() {
         expect(c.setDns(host), InternetPolicyResult.FAILED)
         expect(b.dnsSession?.previous, original)
         expect(c.dnsState()?.applied, false)
-        expect(c.canRemovePin(), false)
         b.failWrite = false
         expect(c.setDns(null), InternetPolicyResult.APPLIED)
         expect(b.config, original)
@@ -148,7 +147,6 @@ fun main() {
         expect(c.setDns(host), InternetPolicyResult.APPLIED)
         b.failClear = true
         expect(c.setDns(null), InternetPolicyResult.FAILED)
-        expect(c.canRemovePin(), false)
         b.failClear = false
         expect(c.setDns(null), InternetPolicyResult.APPLIED)
         expect(b.config, PrivateDnsConfig(null, null))
@@ -173,7 +171,6 @@ fun main() {
         expect(c.setTetheringBlocked(true), InternetPolicyResult.APPLIED)
         expect(c.setTetheringBlocked(false), InternetPolicyResult.APPLIED)
         expect(c.isTetheringBlocked(), true)
-        expect(c.canRemovePin(), true)
     }
     test("tethering failure reports actual state and can retry") { b, c ->
         b.ignoreRestriction = true
@@ -187,21 +184,10 @@ fun main() {
         b.failRestriction = false
         expect(c.setTetheringBlocked(false), InternetPolicyResult.APPLIED)
     }
-    test("PIN removal waits for both controls to be off") { _, c ->
-        expect(c.canRemovePin(), true)
-        c.setDns(host)
-        c.setTetheringBlocked(true)
-        expect(c.canRemovePin(), false)
-        c.setDns(null)
-        expect(c.canRemovePin(), false)
-        c.setTetheringBlocked(false)
-        expect(c.canRemovePin(), true)
-    }
-    test("read failures show unknown and prevent PIN removal") { b, c ->
+    test("read failures show unknown") { b, c ->
         b.failRead = true
         expect(c.dnsState(), null)
         expect(c.isTetheringBlocked(), null)
-        expect(c.canRemovePin(), false)
     }
     test("secondary user cannot configure global DNS or internet controls") { b, _ ->
         val secondary = InternetPolicyController(b, isSupportedUser = false)

@@ -5,8 +5,7 @@
     <string name="app_blocker_controls_header">App Blocker</string>
     <string name="internet_controls_header">Internet controls</string>
     <string name="internet_controls_description">Filter websites and block hotspot sharing. For parental controls, also block app installation and review installed browsers and VPNs.</string>
-    <string name="internet_pin_required">Set a PIN to protect these controls.</string>
-    <string name="internet_pin_remove_blocked">Turn off internet controls before removing the PIN.</string>
+    <string name="pin_protection_summary">One optional PIN protects all App Blocker settings.</string>
     <string name="filtering_dns_label">Filtering DNS</string>
     <string name="filtering_dns_edit">Change DNS provider</string>
     <string name="filtering_dns_off">Filtering is off.</string>
@@ -31,7 +30,7 @@
     <string name="pin_setup_instructions">Create a PIN to protect App Blocker. This is separate from the device unlock PIN.</string>
     <string name="pin_optional_note">You can skip the PIN, but anyone with device access will be able to change restrictions.</string>
     <string name="pin_entry_title">Enter PIN</string>
-    <string name="pin_entry_description">Enter the administrator PIN to manage app restrictions.</string>
+    <string name="pin_entry_description">Enter the App Blocker PIN to manage all settings.</string>
     <string name="pin_hint">PIN</string>
     <string name="confirm_pin_hint">Confirm PIN</string>
     <string name="continue_button">Continue</string>

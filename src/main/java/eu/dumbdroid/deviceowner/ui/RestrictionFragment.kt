@@ -116,8 +116,6 @@ class RestrictionFragment : Fragment() {
         val manager = activity.getInternetRestrictionManager()
         val dns = manager.dnsState()
         val tethering = manager.isTetheringBlocked()
-        view.requireViewById<TextView>(R.id.internet_pin_warning).isVisible =
-            !activity.getPinStorage().isPinSet()
 
         val dnsSwitch = view.requireViewById<Switch>(R.id.filtering_dns_switch)
         dnsSwitch.setOnCheckedChangeListener(null)
@@ -132,9 +130,7 @@ class RestrictionFragment : Fragment() {
             else -> getString(R.string.filtering_dns_off)
         }
         dnsSwitch.setOnCheckedChangeListener { _, enabled ->
-            if (!requireInternetPin()) {
-                refreshInternetControls()
-            } else if (enabled) {
+            if (enabled) {
                 refreshInternetControls()
                 showDnsDialog()
             } else {
@@ -143,7 +139,7 @@ class RestrictionFragment : Fragment() {
         }
         view.requireViewById<Button>(R.id.edit_dns_button).apply {
             isVisible = dns?.hostname != null
-            setOnClickListener { if (requireInternetPin()) showDnsDialog() }
+            setOnClickListener { showDnsDialog() }
         }
 
         val tetheringSwitch = view.requireViewById<Switch>(R.id.block_tethering_switch)
@@ -157,16 +153,8 @@ class RestrictionFragment : Fragment() {
             else -> R.string.block_tethering_off
         })
         tetheringSwitch.setOnCheckedChangeListener { _, enabled ->
-            if (requireInternetPin()) reportInternetResult(manager.setTetheringBlocked(enabled))
-            else refreshInternetControls()
+            reportInternetResult(manager.setTetheringBlocked(enabled))
         }
-    }
-
-    private fun requireInternetPin(): Boolean {
-        if ((requireActivity() as MainActivity).getPinStorage().isPinSet()) return true
-        Toast.makeText(requireContext(), R.string.internet_pin_required, Toast.LENGTH_LONG).show()
-        callback?.onRequestChangePin()
-        return false
     }
 
     private fun showDnsDialog() {
@@ -193,7 +181,6 @@ class RestrictionFragment : Fragment() {
             .create().also { dialog ->
                 dialog.setOnShowListener {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                        if (!requireInternetPin()) return@setOnClickListener
                         val result = manager.setDns(input.text.toString())
                         if (result == InternetPolicyResult.INVALID_HOSTNAME) {
                             input.error = getString(R.string.filtering_dns_invalid)

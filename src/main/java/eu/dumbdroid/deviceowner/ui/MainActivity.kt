@@ -2,6 +2,7 @@ package eu.dumbdroid.deviceowner.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentManager
 import eu.dumbdroid.deviceowner.R
 import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
 import eu.dumbdroid.deviceowner.policy.InternetRestrictionManager
@@ -24,16 +25,8 @@ class MainActivity : AppCompatActivity(),
         restrictionManager = DeviceRestrictionManager(this)
         internetRestrictionManager = InternetRestrictionManager(this)
 
-        if (savedInstanceState == null) {
-            showNextScreen()
-        }
-    }
-
-    override fun onStop() {
-        if (pinStorage.isPinSet()) {
-            showPinEntry()
-        }
-        super.onStop()
+        // Restored fragments must not bypass the global PIN gate.
+        showNextScreen()
     }
 
     override fun onPause() {
@@ -48,9 +41,11 @@ class MainActivity : AppCompatActivity(),
             showRestrictionScreen()
             return
         }
+        // A previous Change PIN screen must not expose settings through Back.
+        supportFragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, PinEntryFragment.newInstance())
-            .commit()
+            .commitNow()
     }
 
     private fun showRestrictionScreen() {

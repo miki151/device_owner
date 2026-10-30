@@ -4,10 +4,10 @@ Used for restricting apps and app installation.
 
 ## Internet controls MVP
 
-The existing PIN gate protects configurable strict Private DNS and internet-sharing
-controls. A PIN is required and cannot be removed while either control is active
-or a failed DNS change still needs recovery. Only the system user can configure
-these device-wide settings.
+One optional PIN protects the whole App Blocker: app restrictions, Private DNS,
+and internet sharing. Without a PIN, all controls remain usable. Setting, changing,
+or removing the PIN never changes restrictions already in force. Only the system
+user can configure the device-wide internet settings.
 
 DNS defaults to `family.adguard-dns.com`; enter your curated resolver hostname later.
 The original nullable DNS mode/hostname is saved before the first change, preserved
@@ -33,7 +33,7 @@ update apps. Review already-installed browsers and VPNs during parental setup.
 
 Run `bash tests/run-internet-policy-tests.sh` with `KOTLINC` set, Kotlin on PATH, or
 an Android build environment. Host tests cover restoration, provider edits, failures,
-PIN-removal eligibility, platform state, and secondary-user rejection. Live filtering,
+platform state and secondary-user rejection. Live filtering,
 Settings enforcement, hotspot shutdown, and firmware upgrades need device checks.
 
 App visibility is managed through `DevicePolicyManager.setApplicationHidden(null, ...)`
