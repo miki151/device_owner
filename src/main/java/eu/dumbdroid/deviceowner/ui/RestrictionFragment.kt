@@ -225,20 +225,17 @@ class RestrictionFragment : Fragment() {
             .setView(input)
             .setPositiveButton(R.string.blocked_domains_save, null)
             .setNegativeButton(R.string.cancel_changes_button, null)
-            .create().also { dialog ->
-                dialog.setOnShowListener {
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                        try {
-                            blocklist.save(input.text.toString())
-                            dialog.dismiss()
-                        } catch (e: IllegalArgumentException) {
-                            input.error = e.message
-                        } catch (e: Exception) {
-                            input.error = getString(R.string.blocked_domains_save_failed)
-                        }
+            .show().also { dialog ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    try {
+                        blocklist.save(input.text.toString())
+                        dialog.dismiss()
+                    } catch (e: IllegalArgumentException) {
+                        input.error = e.message
+                    } catch (e: Exception) {
+                        input.error = getString(R.string.blocked_domains_save_failed)
                     }
                 }
-                dialog.show()
             }
     }
 
