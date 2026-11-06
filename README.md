@@ -22,9 +22,9 @@ for the system user, preserving its previous scope. Clearing removes only this
 package's policy. Writes verify the caller's own restriction and effective enforcement. No device-owner enrollment is required. The existing
 platform-signed system UID supplies the required permissions.
 
-**Ship the companion Settings patch in the same firmware.** Standard Settings
-recognizes these policy-owned restrictions. The companion patch only checks the
-effective restriction again on Save, protecting a dialog opened before locking.
+Standard Settings recognizes these policy-owned restrictions; no Settings patch
+is required. A Private DNS dialog opened before the restriction is enabled can
+still save afterward. This edge case is accepted to keep the implementation small.
 
 Android persists DNS and tethering restrictions across reboot; no boot receiver or
 reapplication is needed. The DNS restoration snapshot is excluded from cloud backup
