@@ -1,11 +1,18 @@
 package eu.dumbdroid.deviceowner.ui
 
+import android.app.Dialog
 import android.content.Context
 import android.graphics.Paint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.LinearLayout
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -32,6 +39,7 @@ class RestrictionFragment : Fragment() {
     private var policyAccessWarning: TextView? = null
     private var changePinButton: Button? = null
     private var dnsDialog: AlertDialog? = null
+    private var domainDialog: Dialog? = null
     private var callback: Callback? = null
 
     override fun onAttach(context: Context) {
@@ -206,37 +214,105 @@ class RestrictionFragment : Fragment() {
                 .setPositiveButton(android.R.string.ok, null).show()
             return
         }
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            minLines = 4
-            maxLines = 8
+        val context = requireContext()
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        var focusSave: (() -> Unit)? = null
+        val input = object : EditText(context) {
+            override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean {
+                val textLayout = layout
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && selectionStart == selectionEnd &&
+                    selectionEnd >= 0 && textLayout != null &&
+                    textLayout.getLineForOffset(selectionEnd) == textLayout.lineCount - 1) {
+                    // T9 consumes Down and uses Back for deletion. Leave the last line directly.
+                    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                        focusSave?.invoke()
+                    }
+                    return true
+                }
+                return super.onKeyPreIme(keyCode, event)
+            }
+        }.apply {
+            id = android.R.id.edit
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI or
+                InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            imeOptions = EditorInfo.IME_ACTION_NONE or EditorInfo.IME_FLAG_NO_ENTER_ACTION
+            gravity = Gravity.TOP or Gravity.START
+            setHorizontallyScrolling(false)
             hint = "reddit.com\nexample.com"
+            nextFocusDownId = android.R.id.button1
         }
         try {
             input.setText(blocklist.read())
+            input.setSelection(input.text.length)
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), R.string.blocked_domains_read_failed, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, R.string.blocked_domains_read_failed, Toast.LENGTH_LONG).show()
             return
         }
-        dnsDialog = AlertDialog.Builder(requireContext())
-            .setTitle(R.string.blocked_domains_title)
-            .setMessage(R.string.blocked_domains_description)
-            .setView(input)
-            .setPositiveButton(R.string.blocked_domains_save, null)
-            .setNegativeButton(R.string.cancel_changes_button, null)
-            .show().also { dialog ->
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                    try {
-                        blocklist.save(input.text.toString())
-                        dialog.dismiss()
-                    } catch (e: IllegalArgumentException) {
-                        input.error = e.message
-                    } catch (e: Exception) {
-                        input.error = getString(R.string.blocked_domains_save_failed)
-                    }
+        // Keep the editor and actions inside the available screen, even with the IME open.
+        val dialog = Dialog(context, R.style.Theme_DeviceOwner)
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, padding)
+            addView(TextView(context).apply {
+                setText(R.string.blocked_domains_title)
+                setTextAppearance(androidx.appcompat.R.style.TextAppearance_AppCompat_Title)
+            })
+            addView(TextView(context).apply {
+                setText(R.string.blocked_domains_editor_help)
+                setPadding(0, padding / 2, 0, padding / 2)
+            })
+            addView(input, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        }
+        val actions = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        val cancel = Button(context).apply {
+            id = android.R.id.button2
+            setText(R.string.cancel_changes_button)
+            nextFocusUpId = input.id
+            nextFocusRightId = android.R.id.button1
+            setOnClickListener { dialog.dismiss() }
+        }
+        val save = Button(context).apply {
+            id = android.R.id.button1
+            setText(R.string.blocked_domains_save)
+            nextFocusUpId = input.id
+            nextFocusLeftId = cancel.id
+            setOnClickListener {
+                try {
+                    blocklist.save(input.text.toString())
+                    dialog.dismiss()
+                } catch (e: IllegalArgumentException) {
+                    input.error = e.message
+                    input.requestFocus()
+                } catch (e: Exception) {
+                    input.error = getString(R.string.blocked_domains_save_failed)
+                    input.requestFocus()
                 }
             }
+        }
+        focusSave = {
+            input.clearComposingText()
+            (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(input.windowToken, 0)
+            save.requestFocus()
+        }
+        for (button in listOf(cancel, save)) {
+            actions.addView(button, LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        }
+        content.addView(actions)
+        dialog.setContentView(content)
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        dialog.setOnDismissListener { domainDialog = null }
+        domainDialog = dialog
+        dialog.show()
+        dialog.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        input.requestFocus()
+        input.post {
+            (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        }
     }
 
     private fun reportInternetResult(result: InternetPolicyResult) {
@@ -395,6 +471,8 @@ class RestrictionFragment : Fragment() {
     override fun onDestroyView() {
         appListContainer?.removeAllViews()
         changePinButton?.setOnClickListener(null)
+        domainDialog?.dismiss()
+        domainDialog = null
         dnsDialog?.dismiss()
         dnsDialog = null
         appListContainer = null

@@ -1,4 +1,5 @@
 <resources>
+    <string name="blocked_domains_editor_help">One domain per line. Includes subdomains. ↓ on the last line selects Save.</string>
     <string name="blocked_domains_save">Save</string>
     <string name="blocked_domains_title">Blocked websites</string>
     <string name="blocked_domains_description">One domain per line. Each entry includes its subdomains. Remove a line to unblock it. Other lookups use the current DNS settings. Existing app connections may remain open.</string>
