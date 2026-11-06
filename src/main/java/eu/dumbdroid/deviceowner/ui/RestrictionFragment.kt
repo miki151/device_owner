@@ -71,6 +71,20 @@ class RestrictionFragment : Fragment() {
         view.requireViewById<Button>(R.id.edit_domains_button).setOnClickListener {
             showDomainBlocklist()
         }
+        view.requireViewById<Switch>(R.id.filtering_dns_switch).setOnClickListener { control ->
+            val manager = (requireActivity() as MainActivity).getInternetRestrictionManager()
+            if ((control as Switch).isChecked) {
+                refreshInternetControls()
+                showDnsDialog()
+            } else {
+                reportInternetResult(manager.setDns(null))
+            }
+        }
+        view.requireViewById<Button>(R.id.edit_dns_button).setOnClickListener { showDnsDialog() }
+        view.requireViewById<Switch>(R.id.block_tethering_switch).setOnClickListener { control ->
+            val manager = (requireActivity() as MainActivity).getInternetRestrictionManager()
+            reportInternetResult(manager.setTetheringBlocked((control as Switch).isChecked))
+        }
     }
 
     override fun onResume() {
@@ -130,7 +144,6 @@ class RestrictionFragment : Fragment() {
         val tethering = manager.isTetheringBlocked()
 
         val dnsSwitch = view.requireViewById<Switch>(R.id.filtering_dns_switch)
-        dnsSwitch.setOnCheckedChangeListener(null)
         dnsSwitch.isChecked = dns?.hostname != null
         dnsSwitch.isEnabled = dns != null
         view.requireViewById<TextView>(R.id.filtering_dns_status).text = when {
@@ -141,21 +154,9 @@ class RestrictionFragment : Fragment() {
             dns.locked -> getString(R.string.filtering_dns_elsewhere)
             else -> getString(R.string.filtering_dns_off)
         }
-        dnsSwitch.setOnCheckedChangeListener { _, enabled ->
-            if (enabled) {
-                refreshInternetControls()
-                showDnsDialog()
-            } else {
-                reportInternetResult(manager.setDns(null))
-            }
-        }
-        view.requireViewById<Button>(R.id.edit_dns_button).apply {
-            isVisible = dns?.hostname != null
-            setOnClickListener { showDnsDialog() }
-        }
+        view.requireViewById<Button>(R.id.edit_dns_button).isVisible = dns?.hostname != null
 
         val tetheringSwitch = view.requireViewById<Switch>(R.id.block_tethering_switch)
-        tetheringSwitch.setOnCheckedChangeListener(null)
         tetheringSwitch.isChecked = tethering == true
         tetheringSwitch.isEnabled = tethering != null
         view.requireViewById<TextView>(R.id.block_tethering_status).setText(when {
@@ -164,9 +165,6 @@ class RestrictionFragment : Fragment() {
             tethering -> R.string.block_tethering_on
             else -> R.string.block_tethering_off
         })
-        tetheringSwitch.setOnCheckedChangeListener { _, enabled ->
-            reportInternetResult(manager.setTetheringBlocked(enabled))
-        }
     }
 
     private fun showDnsDialog() {
