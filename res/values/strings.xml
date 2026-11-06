@@ -7,7 +7,7 @@
     <string name="blocked_domains_read_failed">Could not read the current blocklist. No changes made.</string>
     <string name="blocked_domains_save_failed">Could not save the blocklist. Check the system update and retry.</string>
     <string name="app_name">Device Owner Control</string>
-    <string name="top_level_settings_title">App Blocker</string>
+    <string name="top_level_settings_title">Appblocker</string>
     <string name="top_level_settings_summary">Block apps and manage internet controls</string>
     <string name="app_blocker_controls_header">App Blocker</string>
     <string name="internet_controls_header">Internet controls</string>
