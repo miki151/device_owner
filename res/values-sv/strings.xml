@@ -3,17 +3,12 @@
     <string name="top_level_settings_title">Appblockerare</string>
     <string name="top_level_settings_summary">Blockera appar och åtkomst till Play Butik</string>
 
-    <string name="pin_setup_title">Konfigurera PIN-kod</string>
-    <string name="pin_setup_instructions">Skapa en PIN-kod för att skydda Appblockeraren. Detta är separat från enhetens upplåsningskod.</string>
-    <string name="pin_optional_note">Du kan hoppa över PIN-koden, men alla med tillgång till enheten kommer då kunna ändra begränsningarna.</string>
 
     <string name="pin_entry_title">Ange PIN-kod</string>
     <string name="pin_entry_description">Ange administratörens PIN-kod för att hantera appbegränsningar.</string>
     <string name="pin_hint">PIN-kod</string>
-    <string name="confirm_pin_hint">Bekräfta PIN-kod</string>
 
     <string name="continue_button">Fortsätt</string>
-    <string name="pin_skip_option">Fortsätt utan PIN-kod</string>
 
     <string name="pin_mismatch">PIN-koderna matchar inte.</string>
     <string name="pin_too_short">PIN-koden måste bestå av minst 4 siffror.</string>
@@ -49,7 +44,6 @@
     <string name="change_pin_button">Ändra PIN-kod</string>
     <string name="set_pin_button">Ange PIN-kod</string>
 
-    <string name="pin_saved">PIN-kod sparad.</string>
     <string name="pin_updated">PIN-kod uppdaterad.</string>
     <string name="pin_removed">PIN-kod krävs inte längre.</string>
 

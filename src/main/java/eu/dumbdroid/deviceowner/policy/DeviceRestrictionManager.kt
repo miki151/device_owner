@@ -20,17 +20,6 @@ class DeviceRestrictionManager(private val context: Context) {
     private val preferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-    init {
-        // Migrate an existing Play Store block when App Blocker is opened after an update.
-        if (PinStorage(context).isRestrictionEnabled()) {
-            try {
-                setAppInstallationRestriction(true)
-            } catch (e: Exception) {
-                Log.e(TAG, "Cannot migrate app installation restriction", e)
-            }
-        }
-    }
-
     private val backend by lazy { AndroidHiddenPolicyBackend(context) }
     private val controller by lazy {
         HiddenPolicyController(backend) { pkg, requested, state, error ->
