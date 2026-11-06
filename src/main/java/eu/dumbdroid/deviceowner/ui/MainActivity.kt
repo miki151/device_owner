@@ -25,8 +25,10 @@ class MainActivity : AppCompatActivity(),
         restrictionManager = DeviceRestrictionManager(this)
         internetRestrictionManager = InternetRestrictionManager(this)
 
-        // Restored fragments must not bypass the global PIN gate.
-        showNextScreen()
+        // Restore the current screen unless the global PIN gate must be shown.
+        if (savedInstanceState == null || pinStorage.isPinSet()) {
+            showNextScreen()
+        }
     }
 
     override fun onPause() {
