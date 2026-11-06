@@ -2,7 +2,8 @@ package eu.dumbdroid.deviceowner.policy
 
 private class FakeBackend : InternetPolicyBackend {
     var config = PrivateDnsConfig(null, null)
-    val base = mutableMapOf<String, Boolean>()
+    val own = mutableMapOf<String, Boolean>()
+    val base = mutableSetOf<String>()
     val external = mutableSetOf<String>()
     var failSave = false
     var failClear = false
@@ -11,6 +12,7 @@ private class FakeBackend : InternetPolicyBackend {
     var ignoreWrite = false
     var failRestriction = false
     var ignoreRestriction = false
+    var ignoreEnforcement = false
     var writes = 0
     override var dnsSession: DnsSession? = null
         set(value) {
@@ -29,14 +31,15 @@ private class FakeBackend : InternetPolicyBackend {
         check(!failWrite)
         this.config = config
     }
-    override fun baseRestriction(key: String): Boolean {
+    override fun ownRestriction(key: String): Boolean {
         check(!failRead)
-        return base[key] ?: false
+        return own[key] ?: false
     }
-    override fun effectiveRestriction(key: String) = baseRestriction(key) || key in external
+    override fun effectiveRestriction(key: String) =
+        (ownRestriction(key) && !ignoreEnforcement) || key in base || key in external
     override fun setRestriction(key: String, enabled: Boolean) {
         check(!failRestriction)
-        if (!ignoreRestriction) base[key] = enabled
+        if (!ignoreRestriction) own[key] = enabled
     }
 }
 
@@ -62,7 +65,7 @@ fun main() {
         expect(b.config, PrivateDnsConfig("hostname", host))
         expect(c.setDns(null), InternetPolicyResult.APPLIED)
         expect(b.config, PrivateDnsConfig(null, null))
-        expect(b.baseRestriction(dnsKey), false)
+        expect(b.ownRestriction(dnsKey), false)
         expect(b.dnsSession, null)
     }
     test("resolver edits preserve original and survive controller recreation") { b, c ->
@@ -89,10 +92,10 @@ fun main() {
         b.external.add(dnsKey)
         expect(c.setDns(host), InternetPolicyResult.RESTRICTED_ELSEWHERE)
         b.external.clear()
-        b.base[dnsKey] = true
+        b.base.add(dnsKey)
         expect(c.setDns(host), InternetPolicyResult.RESTRICTED_ELSEWHERE)
         expect(c.setDns(null), InternetPolicyResult.APPLIED)
-        expect(b.baseRestriction(dnsKey), true)
+        expect(dnsKey in b.base, true)
         expect(b.writes, 0)
         expect(b.dnsSession, null)
     }
@@ -100,7 +103,7 @@ fun main() {
         b.failSave = true
         expect(c.setDns(host), InternetPolicyResult.FAILED)
         expect(b.writes, 0)
-        expect(b.baseRestriction(dnsKey), false)
+        expect(b.ownRestriction(dnsKey), false)
     }
     test("partial DNS write keeps restoration snapshot and can disable") { b, c ->
         val original = b.config
@@ -127,6 +130,19 @@ fun main() {
         expect(c.dnsState()?.applied, false)
         expect(b.writes, 0)
     }
+    test("another controller's effective block does not prove our policy was saved") { b, c ->
+        b.external.add(tetherKey)
+        b.ignoreRestriction = true
+        expect(c.setTetheringBlocked(true), InternetPolicyResult.FAILED)
+        expect(c.isTetheringBlocked(), true)
+    }
+    test("owned policy without effective enforcement is a failure") { b, c ->
+        b.ignoreEnforcement = true
+        expect(c.setDns(host), InternetPolicyResult.FAILED)
+        expect(b.ownRestriction(dnsKey), true)
+        expect(c.dnsState()?.applied, false)
+        expect(b.writes, 0)
+    }
     test("readback detects ignored DNS write") { b, c ->
         b.ignoreWrite = true
         expect(c.setDns(host), InternetPolicyResult.FAILED)
@@ -138,7 +154,7 @@ fun main() {
         b.failWrite = true
         expect(c.setDns(null), InternetPolicyResult.FAILED)
         check(b.dnsSession != null)
-        expect(b.baseRestriction(dnsKey), true)
+        expect(b.ownRestriction(dnsKey), true)
         b.failWrite = false
         expect(c.setDns(null), InternetPolicyResult.APPLIED)
         expect(b.dnsSession, null)
@@ -195,7 +211,7 @@ fun main() {
         expect(secondary.setTetheringBlocked(true), InternetPolicyResult.FAILED)
         expect(secondary.dnsState(), null)
         expect(b.writes, 0)
-        expect(b.base.isEmpty(), true)
+        expect(b.own.isEmpty(), true)
     }
     println("$passed internet policy tests passed")
 }

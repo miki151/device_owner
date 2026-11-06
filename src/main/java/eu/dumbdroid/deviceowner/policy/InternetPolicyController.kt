@@ -11,7 +11,7 @@ interface InternetPolicyBackend {
     var dnsSession: DnsSession?
     fun readDns(): PrivateDnsConfig
     fun writeDns(config: PrivateDnsConfig)
-    fun baseRestriction(key: String): Boolean
+    fun ownRestriction(key: String): Boolean
     fun effectiveRestriction(key: String): Boolean
     fun setRestriction(key: String, enabled: Boolean)
 }
@@ -61,7 +61,8 @@ open class InternetPolicyController(
 
     private fun setRestriction(key: String, enabled: Boolean) {
         backend.setRestriction(key, enabled)
-        check(backend.baseRestriction(key) == enabled)
+        check(backend.ownRestriction(key) == enabled)
+        if (enabled) check(backend.effectiveRestriction(key))
     }
 
     private fun writeDns(config: PrivateDnsConfig) {

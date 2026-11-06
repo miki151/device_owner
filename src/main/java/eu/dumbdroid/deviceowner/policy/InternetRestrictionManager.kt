@@ -1,5 +1,6 @@
 package eu.dumbdroid.deviceowner.policy
 
+import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.os.Process
 import android.os.UserManager
@@ -13,7 +14,10 @@ class InternetRestrictionManager(context: Context) : InternetPolicyController(
     onFailure = { Log.e("AppBlockerInternet", "Cannot read or apply internet controls", it) },
 )
 
+// Android U accepts null admins for permission-based callers despite its API annotations.
+@Suppress("NULL_FOR_NONNULL_TYPE")
 private class AndroidInternetPolicyBackend(context: Context) : InternetPolicyBackend {
+    private val manager = checkNotNull(context.getSystemService(DevicePolicyManager::class.java))
     private val resolver = context.contentResolver
     private val userManager = checkNotNull(context.getSystemService(UserManager::class.java))
     private val preferences = context.getSharedPreferences("internet_restrictions", Context.MODE_PRIVATE)
@@ -43,10 +47,17 @@ private class AndroidInternetPolicyBackend(context: Context) : InternetPolicyBac
         check(Settings.Global.putString(resolver, Settings.Global.PRIVATE_DNS_MODE, config.mode))
     }
 
-    override fun baseRestriction(key: String) =
-        userManager.hasBaseUserRestriction(key, Process.myUserHandle())
     override fun effectiveRestriction(key: String) = userManager.hasUserRestriction(key)
+    override fun ownRestriction(key: String): Boolean =
+        (if (key == InternetPolicyController.DNS_RESTRICTION) manager.userRestrictionsGlobally
+        else manager.getUserRestrictions(null)).getBoolean(key)
+
     override fun setRestriction(key: String, enabled: Boolean) {
-        userManager.setUserRestriction(key, enabled)
+        // Android U permission-based policies use this package's identity, without enrollment.
+        // DNS is GLOBAL_ONLY. Tethering permits local policy, preserving its old user scope.
+        if (!enabled) manager.clearUserRestriction(null, key)
+        else if (key == InternetPolicyController.DNS_RESTRICTION) {
+            manager.addUserRestrictionGlobally(key)
+        } else manager.addUserRestriction(null, key)
     }
 }
