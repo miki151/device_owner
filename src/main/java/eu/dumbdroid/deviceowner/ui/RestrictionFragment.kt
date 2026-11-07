@@ -216,6 +216,15 @@ class RestrictionFragment : Fragment() {
         val padding = (16 * resources.displayMetrics.density).toInt()
         var focusSave: (() -> Unit)? = null
         val input = object : EditText(context) {
+            override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && text.isNullOrEmpty() &&
+                    selectionStart == selectionEnd && selectionEnd >= 0) {
+                    if (event.repeatCount == 0) focusSave?.invoke()
+                    return true
+                }
+                return super.onKeyDown(keyCode, event)
+            }
+
             override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean {
                 val textLayout = layout
                 if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && selectionStart == selectionEnd &&
