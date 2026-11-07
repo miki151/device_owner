@@ -220,7 +220,8 @@ class RestrictionFragment : Fragment() {
                 val textLayout = layout
                 if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && selectionStart == selectionEnd &&
                     selectionEnd >= 0 && textLayout != null &&
-                    textLayout.getLineForOffset(selectionEnd) == textLayout.lineCount - 1) {
+                    (text.isNullOrEmpty() ||
+                        textLayout.getLineForOffset(selectionEnd) == textLayout.lineCount - 1)) {
                     // T9 consumes Down and uses Back for deletion. Leave the last line directly.
                     if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
                         focusSave?.invoke()
