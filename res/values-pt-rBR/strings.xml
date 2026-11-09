@@ -2,10 +2,15 @@
     <string name="app_name">Controlo do Proprietário do Dispositivo</string>
     <string name="top_level_settings_title">Bloqueador de Aplicações</string>
     <string name="top_level_settings_summary">Bloquear aplicações e o acesso à Play Store</string>
+    <string name="pin_setup_title">Configurar PIN</string>
+    <string name="pin_setup_instructions">Crie um PIN para proteger o Bloqueador de Aplicações. Este PIN é separado do PIN de desbloqueio do dispositivo.</string>
+    <string name="pin_optional_note">Pode ignorar o PIN, mas qualquer pessoa com acesso ao dispositivo poderá alterar as restrições.</string>
     <string name="pin_entry_title">Introduzir PIN</string>
     <string name="pin_entry_description">Introduza o PIN de administrador para gerir as restrições das aplicações.</string>
     <string name="pin_hint">PIN</string>
+    <string name="confirm_pin_hint">Confirmar PIN</string>
     <string name="continue_button">Continuar</string>
+    <string name="pin_skip_option">Continuar sem PIN</string>
     <string name="pin_mismatch">Os códigos PIN não coincidem.</string>
     <string name="pin_too_short">O PIN deve ter pelo menos 4 dígitos.</string>
     <string name="incorrect_pin">PIN incorreto. Tente novamente.</string>
@@ -29,6 +34,7 @@
     <string name="lock_button">Bloquear</string>
     <string name="change_pin_button">Alterar PIN</string>
     <string name="set_pin_button">Definir PIN</string>
+    <string name="pin_saved">PIN guardado.</string>
     <string name="pin_updated">PIN atualizado.</string>
     <string name="pin_removed">O PIN deixou de ser necessário.</string>
     <string name="pin_change_optional_hint">Deixe o novo PIN vazio para remover a exigência de PIN.</string>

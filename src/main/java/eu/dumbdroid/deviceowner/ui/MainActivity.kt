@@ -60,6 +60,10 @@ class MainActivity : AppCompatActivity(),
         showRestrictionScreen()
     }
 
+    override fun onRequestLock() {
+        showPinEntry()
+    }
+
     override fun onRequestChangePin() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, ChangePinFragment.newInstance())

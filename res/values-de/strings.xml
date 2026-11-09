@@ -2,10 +2,15 @@
     <string name="app_name">Gerätebesitzer-Steuerung</string>
     <string name="top_level_settings_title">App-Blocker</string>
     <string name="top_level_settings_summary">Apps und Zugriff auf den Play Store blockieren</string>
+    <string name="pin_setup_title">PIN einrichten</string>
+    <string name="pin_setup_instructions">Erstellen Sie eine PIN zum Schutz des App-Blockers. Diese ist unabhängig von der Geräte-Entsperr-PIN.</string>
+    <string name="pin_optional_note">Sie können die PIN überspringen, aber dann kann jeder mit Zugriff auf das Gerät die Einschränkungen ändern.</string>
     <string name="pin_entry_title">PIN eingeben</string>
     <string name="pin_entry_description">Geben Sie die Administrator-PIN ein, um App-Einschränkungen zu verwalten.</string>
     <string name="pin_hint">PIN</string>
+    <string name="confirm_pin_hint">PIN bestätigen</string>
     <string name="continue_button">Weiter</string>
+    <string name="pin_skip_option">Ohne PIN fortfahren</string>
     <string name="pin_mismatch">Die PIN-Codes stimmen nicht überein.</string>
     <string name="pin_too_short">Die PIN muss mindestens 4 Ziffern lang sein.</string>
     <string name="incorrect_pin">Falsche PIN. Bitte versuchen Sie es erneut.</string>
@@ -29,6 +34,7 @@
     <string name="lock_button">Sperren</string>
     <string name="change_pin_button">PIN ändern</string>
     <string name="set_pin_button">PIN festlegen</string>
+    <string name="pin_saved">PIN gespeichert.</string>
     <string name="pin_updated">PIN aktualisiert.</string>
     <string name="pin_removed">PIN wird nicht mehr benötigt.</string>
     <string name="pin_change_optional_hint">Lassen Sie die neue PIN leer, um die PIN-Anforderung zu entfernen.</string>

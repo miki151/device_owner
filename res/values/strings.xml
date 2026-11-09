@@ -32,10 +32,15 @@
     <string name="internet_control_updated">Internet controls updated.</string>
     <string name="internet_control_primary_user">Internet controls are available only for the device’s main user.</string>
     <string name="app_installation_updates_note">Blocking app installation also blocks app updates. A parent can temporarily allow installation to update apps.</string>
+    <string name="pin_setup_title">Set Up PIN</string>
+    <string name="pin_setup_instructions">Create a PIN to protect App Blocker. This is separate from the device unlock PIN.</string>
+    <string name="pin_optional_note">You can skip the PIN, but anyone with device access will be able to change restrictions.</string>
     <string name="pin_entry_title">Enter PIN</string>
     <string name="pin_entry_description">Enter the App Blocker PIN to manage all settings.</string>
     <string name="pin_hint">PIN</string>
+    <string name="confirm_pin_hint">Confirm PIN</string>
     <string name="continue_button">Continue</string>
+    <string name="pin_skip_option">Continue without a PIN</string>
     <string name="pin_mismatch">PIN codes do not match.</string>
     <string name="pin_too_short">PIN must be at least 4 digits.</string>
     <string name="incorrect_pin">Incorrect PIN. Try again.</string>
@@ -59,6 +64,7 @@
     <string name="lock_button">Lock</string>
     <string name="change_pin_button">Change PIN</string>
     <string name="set_pin_button">Set PIN</string>
+    <string name="pin_saved">PIN saved.</string>
     <string name="pin_updated">PIN updated.</string>
     <string name="pin_removed">PIN no longer required.</string>
     <string name="pin_change_optional_hint">Leave the new PIN empty to remove the PIN requirement.</string>

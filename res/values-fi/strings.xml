@@ -2,10 +2,15 @@
     <string name="app_name">Laitteen omistajan hallinta</string>
     <string name="top_level_settings_title">Sovellusten esto</string>
     <string name="top_level_settings_summary">Estä sovellukset ja Play Kaupan käyttö</string>
+    <string name="pin_setup_title">Määritä PIN-koodi</string>
+    <string name="pin_setup_instructions">Luo PIN-koodi Sovellusten eston suojaamiseksi. Tämä on eri kuin laitteen lukituksen PIN-koodi.</string>
+    <string name="pin_optional_note">Voit ohittaa PIN-koodin, mutta silloin kuka tahansa laitteeseen pääsevä voi muuttaa rajoituksia.</string>
     <string name="pin_entry_title">Anna PIN-koodi</string>
     <string name="pin_entry_description">Anna ylläpitäjän PIN-koodi hallitaksesi sovellusrajoituksia.</string>
     <string name="pin_hint">PIN-koodi</string>
+    <string name="confirm_pin_hint">Vahvista PIN-koodi</string>
     <string name="continue_button">Jatka</string>
+    <string name="pin_skip_option">Jatka ilman PIN-koodia</string>
     <string name="pin_mismatch">PIN-koodit eivät täsmää.</string>
     <string name="pin_too_short">PIN-koodin on oltava vähintään 4 numeroa.</string>
     <string name="incorrect_pin">Virheellinen PIN-koodi. Yritä uudelleen.</string>
@@ -29,6 +34,7 @@
     <string name="lock_button">Lukitse</string>
     <string name="change_pin_button">Vaihda PIN-koodi</string>
     <string name="set_pin_button">Aseta PIN-koodi</string>
+    <string name="pin_saved">PIN-koodi tallennettu.</string>
     <string name="pin_updated">PIN-koodi päivitetty.</string>
     <string name="pin_removed">PIN-koodia ei enää vaadita.</string>
     <string name="pin_change_optional_hint">Jätä uusi PIN-koodi tyhjäksi poistaaksesi PIN-vaatimuksen.</string>

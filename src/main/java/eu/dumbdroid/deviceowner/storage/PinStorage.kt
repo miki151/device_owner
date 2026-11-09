@@ -14,11 +14,15 @@ class PinStorage(context: Context) {
     fun isPinSet(): Boolean =
         preferences.contains(KEY_PIN_HASH) && preferences.contains(KEY_PIN_SALT)
 
+    fun isSetupComplete(): Boolean =
+        preferences.getBoolean(KEY_SETUP_COMPLETE, isPinSet())
+
     fun savePin(pin: String) {
         if (pin.isEmpty()) {
             preferences.edit()
                 .remove(KEY_PIN_HASH)
                 .remove(KEY_PIN_SALT)
+                .putBoolean(KEY_SETUP_COMPLETE, true)
                 .apply()
             return
         }
@@ -27,6 +31,7 @@ class PinStorage(context: Context) {
         preferences.edit()
             .putString(KEY_PIN_HASH, hash)
             .putString(KEY_PIN_SALT, Base64.encodeToString(salt, Base64.NO_WRAP))
+            .putBoolean(KEY_SETUP_COMPLETE, true)
             .apply()
     }
 
@@ -59,6 +64,7 @@ class PinStorage(context: Context) {
         private const val KEY_PIN_HASH = "pin_hash"
         private const val KEY_PIN_SALT = "pin_salt"
         private const val KEY_RESTRICTION_ENABLED = "restriction_enabled"
+        private const val KEY_SETUP_COMPLETE = "pin_setup_complete"
         private const val SALT_LENGTH = 16
     }
 }
