@@ -2,8 +2,10 @@ package eu.dumbdroid.deviceowner.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentManager
 import eu.dumbdroid.deviceowner.R
 import eu.dumbdroid.deviceowner.policy.DeviceRestrictionManager
+import eu.dumbdroid.deviceowner.policy.InternetRestrictionManager
 import eu.dumbdroid.deviceowner.storage.PinStorage
 
 class MainActivity : AppCompatActivity(),
@@ -13,6 +15,7 @@ class MainActivity : AppCompatActivity(),
 
     private lateinit var pinStorage: PinStorage
     private lateinit var restrictionManager: DeviceRestrictionManager
+    private lateinit var internetRestrictionManager: InternetRestrictionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,17 +23,12 @@ class MainActivity : AppCompatActivity(),
 
         pinStorage = PinStorage(this)
         restrictionManager = DeviceRestrictionManager(this)
+        internetRestrictionManager = InternetRestrictionManager(this)
 
-        if (savedInstanceState == null) {
+        // Restore the current screen unless the global PIN gate must be shown.
+        if (savedInstanceState == null || pinStorage.isPinSet()) {
             showNextScreen()
         }
-    }
-
-    override fun onStop() {
-        if (pinStorage.isPinSet()) {
-            showPinEntry()
-        }
-        super.onStop()
     }
 
     override fun onPause() {
@@ -45,9 +43,11 @@ class MainActivity : AppCompatActivity(),
             showRestrictionScreen()
             return
         }
+        // A previous Change PIN screen must not expose settings through Back.
+        supportFragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
         supportFragmentManager.beginTransaction()
             .replace(R.id.content_container, PinEntryFragment.newInstance())
-            .commit()
+            .commitNow()
     }
 
     private fun showRestrictionScreen() {
@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity(),
 
     fun getPinStorage(): PinStorage = pinStorage
     fun getRestrictionManager(): DeviceRestrictionManager = restrictionManager
+    fun getInternetRestrictionManager(): InternetRestrictionManager = internetRestrictionManager
 
     private fun showNextScreen() {
         if (pinStorage.isPinSet()) {

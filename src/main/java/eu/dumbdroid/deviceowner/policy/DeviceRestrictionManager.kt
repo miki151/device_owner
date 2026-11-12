@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
+import android.os.Process
 import android.os.Build
 import android.os.UserManager
 import android.util.Log
@@ -71,6 +72,7 @@ class DeviceRestrictionManager(private val context: Context) {
             try {
                 setPlayStoreBlockerEnabled(restricted)
                 setUnknownSourcesRestriction(restricted)
+                setAppInstallationRestriction(restricted)
             } catch (e: Exception) {
                 Log.e(TAG, "Play Store policy applied, but installation controls failed", e)
                 return PolicyChangeResult.SIDE_EFFECT_FAILED
@@ -190,6 +192,13 @@ val flags = PackageManager.MATCH_UNINSTALLED_PACKAGES or
 
     private fun setUnknownSourcesRestriction(enabled: Boolean) {
         checkNotNull(userManager).setUserRestriction(UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES, enabled)
+    }
+
+    private fun setAppInstallationRestriction(enabled: Boolean) {
+        val manager = checkNotNull(userManager)
+        val key = UserManager.DISALLOW_INSTALL_APPS
+        manager.setUserRestriction(key, enabled)
+        check(manager.hasBaseUserRestriction(key, Process.myUserHandle()) == enabled)
     }
 
     private fun setApplicationHidden(packageName: String, hidden: Boolean): PolicyChangeResult {

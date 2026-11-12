@@ -2,6 +2,46 @@
 
 Used for restricting apps and app installation.
 
+## Internet controls MVP
+
+One optional PIN protects the whole App Blocker: app restrictions, Private DNS,
+and internet sharing. Without a PIN, all controls remain usable. Setting, changing,
+or removing the PIN never changes restrictions already in force. Only the system
+user can configure the device-wide internet settings.
+
+DNS defaults to `family.adguard-dns.com`; enter your curated resolver hostname later.
+The original nullable DNS mode/hostname is saved before the first change, preserved
+through provider edits, and restored on disable. Failed changes retain this snapshot
+for retry. An unreachable strict resolver may stop internet access. AdGuard Family
+is not a distracting-site denylist; app-specific DNS/proxies can bypass system DNS.
+
+DNS and tethering use Android 14 permission-based device policies owned by this
+package, matching app visibility. Private DNS uses `addUserRestrictionGlobally`
+(the restriction is global-only); tethering uses `addUserRestriction(null, ...)`
+for the system user, preserving its previous scope. Clearing removes only this
+package's policy. Writes verify the caller's own restriction and effective enforcement. No device-owner enrollment is required. The existing
+platform-signed system UID supplies the required permissions.
+
+Standard Settings recognizes these policy-owned restrictions; no Settings patch
+is required. A Private DNS dialog opened before the restriction is enabled can
+still save afterward. This edge case is accepted to keep the implementation small.
+
+Android persists DNS and tethering restrictions across reboot; no boot receiver or
+reapplication is needed. The DNS restoration snapshot is excluded from cloud backup
+and device transfer. Firmware updates must preserve app data. Permanent locking,
+app-data clearing, and factory-reset prevention are outside this MVP.
+
+Installation blocking still controls the system/base flag directly, matching the
+existing unknown-sources control. Independent device/profile-owner restrictions
+remain effective.
+Installation blocking also blocks app updates; temporarily allow installation to
+update apps. Review already-installed browsers and VPNs during parental setup.
+
+Run `bash tests/run-internet-policy-tests.sh` with `KOTLINC` set, Kotlin on PATH, or
+an Android build environment. Host tests cover restoration, provider edits, failures,
+platform state and secondary-user rejection. Live filtering,
+Settings enforcement, hotspot shutdown, and firmware upgrades need device checks.
+
 App visibility is managed through `DevicePolicyManager.setApplicationHidden(null, ...)`
 using the existing platform-signed system UID. The app does not register as a device
 owner, profile owner, or delegate. This implementation requires Android 14's policy

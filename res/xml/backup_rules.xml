@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content xmlns:android="http://schemas.android.com/apk/res/android">
     <include domain="sharedpref" />
+    <!-- Original network settings are specific to this device, not portable preferences. -->
+    <exclude domain="sharedpref" path="internet_restrictions.xml" />
 </full-backup-content>

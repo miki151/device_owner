@@ -8,7 +8,14 @@ android_app {
     platform_apis: true,
     certificate: "platform",
     privileged: true,
+    required: ["dumberos-domain-blocklist.rc"],
     static_libs: [
         "androidx.appcompat_appcompat",
     ],
+}
+
+prebuilt_etc {
+    name: "dumberos-domain-blocklist.rc",
+    src: "init/dumberos-domain-blocklist.rc",
+    sub_dir: "init",
 }
