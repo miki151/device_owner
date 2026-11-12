@@ -2,15 +2,10 @@
     <string name="app_name">Administration af enhedsejer</string>
     <string name="top_level_settings_title">App-blokering</string>
     <string name="top_level_settings_summary">Bloker apps og adgang til Play Butik</string>
-    <string name="pin_setup_title">Opsæt PIN-kode</string>
-    <string name="pin_setup_instructions">Opret en PIN-kode for at beskytte app-blokeringen. Den er adskilt fra enhedens oplåsnings-PIN.</string>
-    <string name="pin_optional_note">Du kan springe PIN-koden over, men alle med adgang til enheden vil så kunne ændre begrænsningerne.</string>
     <string name="pin_entry_title">Indtast PIN-kode</string>
     <string name="pin_entry_description">Indtast administratorens PIN-kode for at administrere app-begrænsninger.</string>
     <string name="pin_hint">PIN-kode</string>
-    <string name="confirm_pin_hint">Bekræft PIN-kode</string>
     <string name="continue_button">Fortsæt</string>
-    <string name="pin_skip_option">Fortsæt uden PIN-kode</string>
     <string name="pin_mismatch">PIN-koderne matcher ikke.</string>
     <string name="pin_too_short">PIN-koden skal være mindst 4 cifre lang.</string>
     <string name="incorrect_pin">Forkert PIN-kode. Prøv igen.</string>
@@ -34,7 +29,6 @@
     <string name="lock_button">Lås</string>
     <string name="change_pin_button">Skift PIN-kode</string>
     <string name="set_pin_button">Indstil PIN-kode</string>
-    <string name="pin_saved">PIN-kode gemt.</string>
     <string name="pin_updated">PIN-kode opdateret.</string>
     <string name="pin_removed">PIN-kode er ikke længere påkrævet.</string>
     <string name="pin_change_optional_hint">Lad den nye PIN-kode være tom for at fjerne PIN-kravet.</string>

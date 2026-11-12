@@ -2,15 +2,10 @@
     <string name="app_name">Device Owner Control</string>
     <string name="top_level_settings_title">Appblokkering</string>
     <string name="top_level_settings_summary">Blokker apper og tilgang til Play Butikk</string>
-    <string name="pin_setup_title">Sett opp PIN-kode</string>
-    <string name="pin_setup_instructions">Opprett en PIN-kode for å beskytte Appblokkering. Dette er separat fra enhetens opplåsings-PIN.</string>
-    <string name="pin_optional_note">Du kan hoppe over PIN-koden, men alle med tilgang til enheten vil kunne endre begrensningene.</string>
     <string name="pin_entry_title">Skriv inn PIN-kode</string>
     <string name="pin_entry_description">Skriv inn administrator-PIN-koden for å administrere appbegrensninger.</string>
     <string name="pin_hint">PIN-kode</string>
-    <string name="confirm_pin_hint">Bekreft PIN-kode</string>
     <string name="continue_button">Fortsett</string>
-    <string name="pin_skip_option">Fortsett uten PIN-kode</string>
     <string name="pin_mismatch">PIN-kodene samsvarer ikke.</string>
     <string name="pin_too_short">PIN-koden må være minst 4 sifre.</string>
     <string name="incorrect_pin">Feil PIN-kode. Prøv igjen.</string>
@@ -34,7 +29,6 @@
     <string name="lock_button">Lås</string>
     <string name="change_pin_button">Endre PIN-kode</string>
     <string name="set_pin_button">Sett PIN-kode</string>
-    <string name="pin_saved">PIN-kode lagret.</string>
     <string name="pin_updated">PIN-kode oppdatert.</string>
     <string name="pin_removed">PIN-kode er ikke lenger nødvendig.</string>
     <string name="pin_change_optional_hint">La den nye PIN-koden være tom for å fjerne PIN-kravet.</string>

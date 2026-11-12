@@ -488,7 +488,6 @@ class RestrictionFragment : Fragment() {
     }
 
     interface Callback {
-        fun onRequestLock()
         fun onRequestChangePin()
     }
 
